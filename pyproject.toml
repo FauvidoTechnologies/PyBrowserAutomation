@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "pyba"
+name = "py-browser-automation"
 version = "0.0.1"
 description = "Automate online browsing using python and AI"
 authors = ["pUrGe12 <achintya.jai@owasp.org>"]

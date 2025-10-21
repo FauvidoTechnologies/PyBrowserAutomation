@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="pyba",
+    name="py-browser-automation",
     version="0.1.0",
     author="pUrGe12",
     author_email="achintya.jai@owasp.org",
