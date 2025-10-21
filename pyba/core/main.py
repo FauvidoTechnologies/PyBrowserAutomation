@@ -102,7 +102,7 @@ class Engine:
                     cleaned_dom=cleaned_dom, user_prompt=prompt
                 )
 
-                if action is None:
+                if all(value is None for value in vars(action).values()):
                     # This means the goal has been achieved
                     print("Automated completed, agent returned None")
                     sys.exit(0)

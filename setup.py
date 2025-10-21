@@ -2,8 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="pyba",
-    version="0.0.1",
+    version="0.1.0",
     author="pUrGe12",
+    author_email="achintya.jai@owasp.org",
+    url="https://github.com/FauvidoTechnologies/PyBrowserAutomation",
     description="Automate online browsing using python and AI",
     packages=find_packages(),
     install_requires=[
