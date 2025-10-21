@@ -4,6 +4,4 @@ This is a browser automation software written in python. It can visit any websit
 
 ## Framework
 
-The following diagram explains the basic idea:
-
-[!image](./images/BrowserAutomationEngine.png)
+Documentation needs work.
