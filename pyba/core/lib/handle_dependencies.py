@@ -1,11 +1,13 @@
 import subprocess
 import sys
 
+
 class PlaywrightDependencies:
     """
     We'll make use of this class if the user wants us to handle the dependencies. Usually, this
     shouldn't be the case because its like 2 commands to manage all playwright deps.
     """
+
     @staticmethod
     def check_playwright_browsers_installed() -> bool:
         """
@@ -53,7 +55,9 @@ class PlaywrightDependencies:
             if missing_lines:
                 print("The following dependencies are missing: ")
                 print("\n".join(missing_lines))
-                print("Please install them manually using your package manager or run: playwright install-deps")
+                print(
+                    "Please install them manually using your package manager or run: playwright install-deps"
+                )
 
         except FileNotFoundError:
             print("Could not run playwright. Is it installed in this environment?")

@@ -1,12 +1,9 @@
 import asyncio
-from urllib.parse import urljoin
-
-from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
-
 from typing import List
 from urllib.parse import urljoin, urlparse
+
+from bs4 import BeautifulSoup
+from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from pyba.utils.common import url_entropy
 
@@ -14,7 +11,7 @@ from pyba.utils.common import url_entropy
 class DOMExtraction:
     """
     Given the DOM from the URL, this class provides functions to extract it properly
-    
+
     1. Extract all the hyperlinks from it
     2. Extract all input_fields from it (basically all fillable boxes)
     3. Extract all the clickables from it
@@ -24,9 +21,16 @@ class DOMExtraction:
     the total length is lower than a certain threshold.
     """
 
-    def __init__(self, html: str, body_text: str, elements: str, base_url: str = None, clickable_fields_flag: bool = False) -> None:
+    def __init__(
+        self,
+        html: str,
+        body_text: str,
+        elements: str,
+        base_url: str = None,
+        clickable_fields_flag: bool = False,
+    ) -> None:
         """
-        We'll take the entire dom, the text_body and the elements for sure 
+        We'll take the entire dom, the text_body and the elements for sure
         """
 
         self.html = html
@@ -47,7 +51,15 @@ class DOMExtraction:
                 href = tag.get("href", "").strip().lower()
                 if (
                     not href
-                    or href in {"#", "#!", "/", "javascript:void(0)", "javascript:void(0);", "javascript: void(0)"}
+                    or href
+                    in {
+                        "#",
+                        "#!",
+                        "/",
+                        "javascript:void(0)",
+                        "javascript:void(0);",
+                        "javascript: void(0)",
+                    }
                     or href.startswith("javascript:")
                     or href.startswith("#")
                 ):
@@ -60,7 +72,9 @@ class DOMExtraction:
                 candidates.append(tag)
 
         candidates += soup.find_all(attrs={"onclick": True})
-        candidates += soup.find_all(attrs={"role": lambda v: v and v.lower() in ("button", "link")})
+        candidates += soup.find_all(
+            attrs={"role": lambda v: v and v.lower() in ("button", "link")}
+        )
         candidates += soup.find_all(attrs={"tabindex": True})
 
         seen = set()
@@ -85,7 +99,14 @@ class DOMExtraction:
 
             # Not sure how junk these are but dropping them for now to avoid explosion of context
             junk_keywords = [
-                "previous", "next", "slide", "carousel", "arrow", "goto", "nav", "scroll"
+                "previous",
+                "next",
+                "slide",
+                "carousel",
+                "arrow",
+                "goto",
+                "nav",
+                "scroll",
             ]
             if any(k in text.lower() for k in junk_keywords):
                 continue
@@ -115,7 +136,15 @@ class DOMExtraction:
             # If we do a raw extraction, all this junk will make it through
             if (
                 not href_lower
-                or href_lower in {"#", "#!", "/", "javascript:void(0)", "javascript:void(0);", "javascript: void(0)"}
+                or href_lower
+                in {
+                    "#",
+                    "#!",
+                    "/",
+                    "javascript:void(0)",
+                    "javascript:void(0);",
+                    "javascript: void(0)",
+                }
                 or href_lower.startswith("javascript:")
                 or href_lower.startswith("#")
             ):
@@ -123,9 +152,10 @@ class DOMExtraction:
 
             # Have to figure out a bettery way to handle these
             # In the case where we do have relative URLs, we just make it absolute
-            if any(x in href_lower for x in [
-                "ref_=", "track", "redirect", "sessionid", "signin", "register"
-            ]):
+            if any(
+                x in href_lower
+                for x in ["ref_=", "track", "redirect", "sessionid", "signin", "register"]
+            ):
                 continue
             full_url = urljoin(self.base_url, href)
 
@@ -149,12 +179,10 @@ class DOMExtraction:
         output = [href for href in clean_hrefs if url_entropy(href) < 5.0]
         return output
 
-
     async def _extract_all_text(self) -> List:
         lines = self.body_text.split("\n")
         non_empty_lines = [line.strip() for line in lines if line.strip()]
         return non_empty_lines
-
 
     async def _extract_input_fields(
         self,
@@ -162,7 +190,7 @@ class DOMExtraction:
     ) -> List[dict]:
         """
         Extracts and verifies fillable input fields. We're passing to it all the valid fields we already know
-        of so that it caches it and doesn't mess with the actual DOM during execution. 
+        of so that it caches it and doesn't mess with the actual DOM during execution.
 
         Args:
             known_fields : List[Dict], optional
@@ -215,7 +243,6 @@ class DOMExtraction:
                     selector = f"{field_info['tag']}:nth-of-type(unknown)"
 
                 field_info["selector"] = selector
-
 
                 # If the field is already filled or we've seen it before,
                 # Then we can skip it
@@ -288,7 +315,5 @@ class DOMExtraction:
         except Exception as e:
             cleaned_dom["input_fields"] = []
             print(f"Failed to extract input fields: {e}")
-
-
 
         return cleaned_dom
