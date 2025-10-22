@@ -1,4 +1,5 @@
 import sys
+import asyncio
 
 from playwright.async_api import async_playwright
 
@@ -126,3 +127,9 @@ class Engine:
                 cleaned_dom = await extractionEngine.extract()
 
                 cleaned_dom["current_url"] = base_url
+
+    def sync_run(self, prompt: str = None):
+        """
+        Sync endpoint for running the above function
+        """
+        asyncio.run(self.run(prompt=prompt))
