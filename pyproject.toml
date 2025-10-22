@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py-browser-automation"
-version = "0.1.1"
+version = "0.1.2"
 description = "Automate online browsing using python and AI"
 authors = ["pUrGe12 <achintya.jai@owasp.org>"]
 keywords = [
@@ -14,14 +14,7 @@ classifiers = [
 ]
 license = "MIT"
 readme = "README.md"
-packages = [
-  {include = "pyba" },
-  { include = "pyba/core" },
-  { include = "pyba/core/lib" },
-  { include = "pyba/core/agent" },
-  { include = "pyba/utils" },
-  { include = "pyba/utils/prompts" }
-]
+packages = [{include = "pyba"}]
 
 [tool.poetry.dependencies]
 python = ">=3.10"
