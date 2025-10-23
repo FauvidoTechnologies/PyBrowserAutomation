@@ -30,7 +30,36 @@ pip install .
 
 ## Usage
 
+- Import the main engine using:
+
 ```python3
 from pyba import Engine
+```
+
+- Set the right configurations depending on which model you want to use:
+
+> For VertexAI
+```python3
 engine = Engine(vertexai_project_id="", vertexai_server_location="", handle_dependencies=False)
 ```
+
+> For OpenAI
+```python3
+engine = Engine(openai_api_key="", handle_dependencies=False)
+```
+
+- Set `handle_dependencies` to `True` if you're running this for the first time and install the playwright browsers and other dependencies by following the instructions.
+
+- Run the `sync` endpoint using `engine.sync_run()`
+
+```python3
+engine.sync_run(prompt="open instagram", automated_login_sites=["instagram"])
+```
+
+> You can set the `automated_login_sites` argument as whichever website you want to automatially login to.
+
+This is useful in case of OSINT when you inevitably come across a profile that is hidden behind the login wall. Setting that field will trigger the login scripts to run after it verifies the site.
+
+If you don't want to automatically login, don't set this value. The default behavior is to not do any such thing.
+
+- We also have an async endpoint if you need. That can be called using just `.run()`
