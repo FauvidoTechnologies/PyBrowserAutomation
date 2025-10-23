@@ -1,3 +1,5 @@
+import os
+import re
 import subprocess
 import sys
 
@@ -11,7 +13,9 @@ class PlaywrightDependencies:
     @staticmethod
     def check_playwright_browsers_installed() -> bool:
         """
-        Check if Playwright browsers are installed by running `playwright install --dry-run`
+        Checking if playwright browsers are installed by pipeing the output of a dry-run
+        and verifying certain regex matches along with checking the cache directory where
+        we expect the browsers to be.
         """
         try:
             result = subprocess.run(
@@ -20,8 +24,37 @@ class PlaywrightDependencies:
                 text=True,
                 check=False,
             )
-            # If dry-run shows no browsers to install, they are already installed
-            return "No browsers to install" in result.stdout
+
+            stdout = result.stdout.lower()
+
+            # Looking for `downloading` text
+            if re.search(r"install location:", stdout) and not re.search(
+                r"(installing|downloading)", stdout
+            ):
+                return True
+
+            # We can just check the cache directory as well (hopefully this is not a violation of anything...)
+            cache_dir = os.path.expanduser("~/.cache/ms-playwright")
+            expected_dirs = [
+                "chromium-",
+                "chromium_headless_shell-",
+                "firefox-",
+                "webkit-",
+                "ffmpeg-",
+            ]
+
+            # Checking if each expected browser has at least one matching folder
+            installed = (
+                all(
+                    any(name.startswith(prefix) for name in os.listdir(cache_dir))
+                    for prefix in expected_dirs
+                )
+                if os.path.exists(cache_dir)
+                else False
+            )
+
+            return installed
+
         except Exception:
             return False
 
@@ -59,6 +92,8 @@ class PlaywrightDependencies:
                     "Please install them manually using your package manager or run: playwright install-deps"
                 )
 
+            else:
+                print("All playwright dependencies present")
         except FileNotFoundError:
             print("Could not run playwright. Is it installed in this environment?")
 
