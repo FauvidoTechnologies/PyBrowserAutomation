@@ -1,12 +1,19 @@
 import asyncio
 import sys
+from typing import List
 
 from playwright.async_api import async_playwright
 
 from pyba.core.agent.playwright_agent import PlaywrightAgent
 from pyba.core.lib import DOMExtraction, HandleDependencies
 from pyba.core.lib.action import perform_action
-from pyba.utils.exceptions import PromptNotPresent, ServiceNotSelected, ServerLocationUndefined
+from pyba.core.scripts import LoginEngine
+from pyba.utils.exceptions import (
+    PromptNotPresent,
+    ServiceNotSelected,
+    ServerLocationUndefined,
+    UnknownSiteChosen,
+)
 
 
 class Engine:
@@ -29,7 +36,9 @@ class Engine:
         """
         self.provider = None
         self.headless_mode = headless
+        self.automated_login_engine_classes = []
 
+        # This needs to go inside a config file
         selectors = (
             "input:not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']):not([type='file'])",
             "textarea",
@@ -41,9 +50,16 @@ class Engine:
         )
         self.combined_selector = ", ".join(selectors)
 
+        self.handle_dependencies(handle_dependencies)
+        self.handle_keys(openai_api_key, vertexai_project_id, vertexai_server_location)
+        # Defining the playwright agent with the defined configs
+        self.playwright_agent = PlaywrightAgent(engine=self)  # This is amusing
+
+    def handle_dependencies(self, handle_dependencies: bool):
         if handle_dependencies:
             HandleDependencies.playwright.handle_dependencies()
 
+    def handle_keys(self, openai_api_key, vertexai_project_id, vertexai_server_location):
         if openai_api_key is None and vertexai_project_id is None:
             raise ServiceNotSelected()
 
@@ -67,10 +83,7 @@ class Engine:
             self.provider = "openai"
             self.openai_api_key = openai_api_key
 
-        # Defining the playwright agent with the defined configs
-        self.playwright_agent = PlaywrightAgent(engine=self)  # This is amusing
-
-    async def run(self, prompt: str = None):
+    async def run(self, prompt: str = None, automated_login_sites: List[str] = None):
         """
         The most basic implementation for the run function
 
@@ -82,6 +95,19 @@ class Engine:
 
         if prompt is None:
             raise PromptNotPresent()
+
+        if automated_login_sites is not None:
+            assert isinstance(
+                automated_login_sites, list
+            ), "Make sure the automated_login_sites is a list!"
+
+            for engine in automated_login_sites:
+                # Each engine is going to be a name like "instagram"
+                if hasattr(LoginEngine, engine):
+                    engine_class = getattr(LoginEngine, engine)
+                    self.automated_login_engine_classes.append(engine_class)
+                else:
+                    raise UnknownSiteChosen(LoginEngine.available_engines())
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=False)
@@ -97,6 +123,24 @@ class Engine:
             }
 
             for steps in range(0, 10):
+                # First check if we need to login and run the scripts
+                # If loginengines have been chosen then self.automated_login_engine_classes will be populated
+                if self.automated_login_engine_classes:
+                    for engine in self.automated_login_engine_classes:
+                        engine_instance = engine(page)
+                        # Instead of just running it and checking inside, we can have a simple lookup list
+                        out_flag = await engine_instance.run()
+                        if out_flag:
+                            # This means it was True and we successfully logged in
+                            print(f"Logged in successfully through the {page.url} link")
+                        elif out_flag is None:
+                            # This means it wasn't for a login page for this engine
+                            print("skipping")
+                            pass
+                        else:
+                            # This means it failed
+                            print(f"Login attempted at {page.url} but failed!")
+
                 # Say we're going to run only 10 steps so far, so after this no more automation
                 # Get an actionable PlaywrightResponse from the models
                 action = self.playwright_agent.process_action(
@@ -128,8 +172,8 @@ class Engine:
 
                 cleaned_dom["current_url"] = base_url
 
-    def sync_run(self, prompt: str = None):
+    def sync_run(self, prompt: str = None, automated_login_sites: List[str] = None):
         """
         Sync endpoint for running the above function
         """
-        asyncio.run(self.run(prompt=prompt))
+        asyncio.run(self.run(prompt=prompt, automated_login_sites=automated_login_sites))

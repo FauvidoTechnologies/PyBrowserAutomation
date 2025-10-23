@@ -1,8 +1,11 @@
 import os
+from typing import Optional
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from playwright.async_api import Page
+
+from pyba.utils.exceptions import CredentialsnotSpecified
 
 load_dotenv()  # Loading the username and passwords
 
@@ -25,6 +28,9 @@ class InstagramLogin:
         self.engine_name = "instagram"
         self.username = os.getenv("instagram_username")
         self.password = os.getenv("instagram_password")
+
+        if self.username is None or self.password is None:
+            raise CredentialsnotSpecified(self.engine_name)
 
         self.uses_2FA = False
 
@@ -56,39 +62,50 @@ class InstagramLogin:
         else:
             return False
 
-    def run(self) -> None:
+    async def run(self) -> Optional[bool]:
         """
         The idea is to take in the username and password from the .env file for now
         and simply use that to execute this function
 
         Returns:
                 `None` if we're not supposed to launch the automated login script here
+                `True/False` if the login was successful or a failure
         """
         val = self.verify_login_page()
         if not val:
             return None
 
         # Now run the script
-        self.page.wait_for_selector('input[name="username"]')
-        self.page.fill('input[name="username"]', self.username)
-        self.page.fill('input[name="password"]', self.password)
+        try:
+            await self.page.wait_for_selector('input[name="username"]')
+            await self.page.fill('input[name="username"]', self.username)
+            await self.page.fill('input[name="password"]', self.password)
 
-        self.page.click('button[type="submit"]')
+            await self.page.click('button[type="submit"]')
+        except Exception:
+            # Now this is bad
+            return False
 
         # There is a not-now button that we need to click for not saving our information
         try:
-            self.page.wait_for_selector('text="Not now"', timeout=30000)
-            self.page.click('text="Not now"')
+            await self.page.wait_for_selector('text="Not now"', timeout=30000)
+            await self.page.click('text="Not now"')
         except Exception:
             # This means that never came so we're done.
             pass
 
         # Sometimes these things also come up for new updates
         try:
-            self.page.wait_for_selector('text="OK"', timeout=10000)
-            self.page.mouse.click(x_from_left, y_top_left)
+            await self.page.wait_for_selector('text="OK"', timeout=10000)
+            await self.page.mouse.click(x_from_left, y_top_left)
         except Exception:
             # This means this never came up
             pass
 
-        self.page.wait_for_load_state("networkidle")
+        try:
+            await self.page.wait_for_load_state("networkidle", timeout=10000)
+        except Exception:
+            # It's fine, we'll assume that the login worked nicely
+            pass
+
+        return True

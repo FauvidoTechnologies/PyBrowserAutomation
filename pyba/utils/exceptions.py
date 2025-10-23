@@ -26,3 +26,23 @@ class ServerLocationUndefined(Exception):
         super().__init__(
             f"The server location {server_location} is undefined. Please visit https://cloud.google.com/vertex-ai/docs/general/locations and choose a location that your credits are tied to."
         )
+
+
+class CredentialsnotSpecified(Exception):
+    """
+    Exception raised in the login scripts when the relevant credentials haven't been specified
+    """
+
+    def __init__(self, site_name: str):
+        super().__init__(f"Please specify all the credentials for the {site_name} engine.")
+
+
+class UnknownSiteChosen(Exception):
+    """
+    Exception to be raised when the user chooses a site for automated login that isn't implemented yet.
+    """
+
+    def __init__(self, sites: list):
+        super().__init__(
+            f"Unknown site chosen for automated login. The following sites are available: {sites}"
+        )
