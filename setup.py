@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="py-browser-automation",
-    version="0.1.4",
+    version="0.1.5",
     author="pUrGe12",
     author_email="achintya.jai@owasp.org",
     url="https://github.com/FauvidoTechnologies/PyBrowserAutomation",
