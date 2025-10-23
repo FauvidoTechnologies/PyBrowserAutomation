@@ -1,8 +1,9 @@
-from pyba.core.scripts.login import InstagramLogin
+from pyba.core.scripts.login import InstagramLogin, FacebookLogin
 
 
 class LoginEngine:
     instagram = InstagramLogin
+    facebook = FacebookLogin
 
     @classmethod
     def available_engines(cls):
