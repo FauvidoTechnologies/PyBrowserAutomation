@@ -1,0 +1,32 @@
+# Directory structure
+
+```
+core/
+	main.py
+	lib/
+		actions.py
+		extractions.py
+		handle_dependencies.py
+	scripts/
+		login/
+			facebook.py
+			instagram.py
+	agent/
+		playwright_agent.py
+database/
+	db_funcs.py
+	model.py
+	setup/
+		mysql.py
+		postgres.py
+		sqlite.py
+		duckdb.py
+utils/
+	common.py
+	exceptions.py
+	load_yaml.py
+	structure.py
+	prompts/
+		general_prompt.py
+		system_prompt.py
+```
