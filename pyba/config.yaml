@@ -1,12 +1,27 @@
 main_engine_configs:
+
+  # Default configs for the main loop
+  max_iteration_steps: 10
+  input_field_test_value: "PyBA"
+  headless_mode: False        # By default, doesn't run in the headless mode
+  handle_dependencies: True   # By default, we try to install all the recommended dependencies
+  enable_tracing: True        # By default, we allow for tracing of the activity
+  trace_save_directory: "/tmp/pyba" # Saving the .zip file inside the /tmp/pyba directory unless specified by the user
+
+  # Tracing configs
+  tracing:
+    screenshots: False # Capture screenshots
+    snapshots: False   # Capture DOM snapshots
+    sources: False     # Capture JS sources
+    record_har_content: "omit"    # can also be omit if you don't want to include requests and responses
+
+  # Default values for the LLMs
   vertexai:
     provider: "vertexai"
     model: "gemini-2.5-pro"
   openai:
     provider: "openai"
     model: "gpt-4o"
-  max_iteration_steps: 10
-  input_field_test_value: "PyBA"
 
 automated_login_configs:
   facebook:

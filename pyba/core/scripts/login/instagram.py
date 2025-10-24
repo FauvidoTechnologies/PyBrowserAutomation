@@ -82,8 +82,15 @@ class InstagramLogin:
             await self.page.click('button[type="submit"]')
         except Exception:
             # Now this is bad
-            return False
+            try:
+                # Alternate fields that instagram uses
+                await self.page.wait_for_selector('input[name="email"]')
+                await self.page.fill('input[name="email"]', self.username)
+                await self.page.fill('input[name="pass"]', self.password)
 
+                await self.page.click('button[type="submit"]')
+            except Exception:
+                return False
         # There is a not-now button that we need to click for not saving our information
         try:
             await self.page.wait_for_selector('text="Not now"', timeout=30000)

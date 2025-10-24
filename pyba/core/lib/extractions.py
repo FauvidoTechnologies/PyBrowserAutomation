@@ -146,14 +146,14 @@ class DOMExtraction:
 
             if any(
                 x in href_lower
-                for x in list(config["extraction_configs"]["hyperlink"]["links_to_avoid"])
+                for x in list(config["extraction_configs"]["hyperlinks"]["links_to_avoid"])
             ):
                 continue
 
             # Skipping any other type of URL. Will have to make this a confugrable parameter
             parsed = urlparse(full_url)
             if parsed.scheme not in set(
-                config["extraction_configs"]["hyperlink"]["valid_schemas"]
+                config["extraction_configs"]["hyperlinks"]["valid_schemas"]
             ):
                 continue
 

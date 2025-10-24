@@ -1,5 +1,7 @@
 import asyncio
 import sys
+import uuid
+from pathlib import Path
 from typing import List
 
 from playwright.async_api import async_playwright
@@ -29,16 +31,29 @@ class Engine:
         openai_api_key: str = None,
         vertexai_project_id: str = None,
         vertexai_server_location: str = None,
-        headless: bool = False,
-        handle_dependencies: bool = True,
+        headless: bool = config["main_engine_configs"]["headless_mode"],
+        handle_dependencies: bool = config["main_engine_configs"]["handle_dependencies"],
+        enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
+        trace_save_directory: str = None,
     ):
         """
-        1. Get the keys
-        2. Check if we are to run in the headless mode (default at No)
-        3. Does the user need us to download dependencies (default at Yes)
+        Args:
+            openai_api_key: API key for OpenAI models should you want to use that
+            vertexai_project_id: Create a VertexAI project to use that instead of OpenAI
+            vertexai_server_location: VertexAI server location
+            headless: Choose if you want to run in the headless mode or not
+            handle_dependencies: Choose if you want to automatically install dependencies during runtime
+            enable_tracing: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
+            trace_save_directory: The directory where you want the .zip file to be saved
+
+        Find these default values at `pyba/config.yaml`
         """
         self.provider = None
+        self.session_id = uuid.uuid4().hex
         self.headless_mode = headless
+        self.tracing = enable_tracing
+        self.trace_save_directory = trace_save_directory
+
         self.automated_login_engine_classes = []
 
         selectors = tuple(config["process_config"]["selectors"])
@@ -104,9 +119,39 @@ class Engine:
                     raise UnknownSiteChosen(LoginEngine.available_engines())
 
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=False)
-            context = await browser.new_context()
-            page = await context.new_page()
+            self.browser = await p.chromium.launch(headless=False)
+
+            # Start tracing if enabled
+            if self.tracing:
+                # First create the directory for saving
+                if self.trace_save_directory is None:
+                    # This means we revert to default
+                    trace_save_directory = config["main_engine_configs"]["trace_save_directory"]
+                else:
+                    trace_save_directory = self.trace_save_directory
+
+                self.trace_dir = Path(trace_save_directory)
+                self.trace_dir.mkdir(parents=True, exist_ok=True)
+                har_file_path = self.trace_dir / f"{self.session_id}_network.har"
+
+                self.context = await self.browser.new_context(
+                    record_har_path=har_file_path,  # HAR file output
+                    record_har_content=config["main_engine_configs"]["tracing"][
+                        "record_har_content"
+                    ],  # include request/response bodies
+                )
+
+                await self.context.tracing.start(
+                    # By default, all of them are False
+                    screenshots=config["main_engine_configs"]["tracing"]["screenshots"],
+                    snapshots=config["main_engine_configs"]["tracing"]["snapshots"],
+                    sources=config["main_engine_configs"]["tracing"]["sources"],
+                )
+            else:
+                # Normal context without tracing enabled
+                self.context = await self.browser.new_context()
+
+            self.page = await self.context.new_page()
 
             cleaned_dom = {
                 "hyperlinks": None,
@@ -121,38 +166,40 @@ class Engine:
                 # If loginengines have been chosen then self.automated_login_engine_classes will be populated
                 if self.automated_login_engine_classes:
                     for engine in self.automated_login_engine_classes:
-                        engine_instance = engine(page)
+                        engine_instance = engine(self.page)
                         # Instead of just running it and checking inside, we can have a simple lookup list
                         out_flag = await engine_instance.run()
                         if out_flag:
                             # This means it was True and we successfully logged in
-                            print(f"Logged in successfully through the {page.url} link")
+                            print(f"Logged in successfully through the {self.page.url} link")
                         elif out_flag is None:
                             # This means it wasn't for a login page for this engine
-                            print("skipping")
                             pass
                         else:
                             # This means it failed
-                            print(f"Login attempted at {page.url} but failed!")
+                            print(f"Login attempted at {self.page.url} but failed!")
 
                 # Say we're going to run only 10 steps so far, so after this no more automation
                 # Get an actionable PlaywrightResponse from the models
-                action = self.playwright_agent.process_action(
-                    cleaned_dom=cleaned_dom, user_prompt=prompt
-                )
+                try:
+                    action = self.playwright_agent.process_action(
+                        cleaned_dom=cleaned_dom, user_prompt=prompt
+                    )
+                except Exception as e:
+                    print(f"something went wrong in obtaining the response: {e}")
+                    action = None
 
-                if all(value is None for value in vars(action).values()):
-                    # This means the goal has been achieved
-                    print("Automated completed, agent returned None")
-                    sys.exit(0)
+                if action is None or all(value is None for value in vars(action).values()):
+                    print("Automation completed, agent has returned None")
+                    await self.shut_down()
 
                 # If its not None, then perform it
-                await perform_action(page, action)
+                await perform_action(self.page, action)
 
-                page_html = await page.content()
-                body_text = await page.inner_text("body")
-                elements = await page.query_selector_all(self.combined_selector)
-                base_url = page.url
+                page_html = await self.page.content()
+                body_text = await self.page.inner_text("body")
+                elements = await self.page.query_selector_all(self.combined_selector)
+                base_url = self.page.url
 
                 # Then we need to extract the new cleaned_dom from the page
                 extractionEngine = DOMExtraction(
@@ -164,6 +211,22 @@ class Engine:
                 cleaned_dom = await extractionEngine.extract()
 
                 cleaned_dom["current_url"] = base_url
+
+        await self.shut_down()
+
+    async def shut_down(self):
+        """
+        Function to cleanly close the existing browsers and contexts. This also saves
+        the traces in the provided trace_dir by the user or the default.
+        """
+        if self.tracing:
+            trace_path = self.trace_dir / f"{self.session_id}_trace.zip"
+            print(f"This is the tracepath: {trace_path}")
+            await self.context.tracing.stop(path=str(trace_path))
+
+        await self.context.close()
+        await self.browser.close()
+        sys.exit(0)
 
     def sync_run(self, prompt: str = None, automated_login_sites: List[str] = None):
         """
