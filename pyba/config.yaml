@@ -1,0 +1,87 @@
+main_engine_configs:
+  vertexai:
+    provider: "vertexai"
+    model: "gemini-2.5-pro"
+  openai:
+    provider: "openai"
+    model: "gpt-4o"
+  max_iteration_steps: 10
+  input_field_test_value: "PyBA"
+
+automated_login_configs:
+  facebook:
+    urls:
+      - "https://www.facebook.com/login/"
+      - "https://www.facebook.com/"
+  instagram:
+    urls:
+      - "https://www.instagram.com/accounts/login/"
+      - "https://www.instagram.com/"
+    click_location:   # Change the location if your screen size is different, this will work as is for 1900x1280
+      default_screen_height: 1280
+      x_from_left: 1000
+      y_from_bottom: 1000
+
+extraction_configs:
+  clickables:
+    clickable_field_selectors:
+      - "a"
+      - "button"
+      - "area"
+      - "summary"
+    invalid_selector_field_hyperlinks:
+      - "#"
+      - "#!"
+      - "/"
+      - "javascript:void(0)"
+      - "javascript:void(0);"
+      - "javascript: void(0)"
+    valid_button_types_for_clickables:
+      - "button"
+      - "submit"
+      - "reset"
+    junk_keywords:    # These are the ones which we are going to skip
+      - "previous"
+      - "next"
+      - "slide"
+      - "carousel"
+      - "arrow"
+      - "goto"
+      - "nav"
+      - "scroll"
+  hyperlinks:
+    links_to_avoid:
+      - "ref_="
+      - "track"
+      - "redirect"
+      - "sessionid"
+      - "signin"
+      - "register"
+    valid_schemas:
+      - "http"
+      - "https"
+      - "mailto"
+      - "ftp"
+      - "tel"
+  input_fields:
+    valid_tags:
+      - "input"
+      - "textarea"
+      - "select"
+    invalid_input_types:
+      - "hidden"
+      - "submit"
+      - "button"
+      - "checkbox"
+      - "radio"
+      - "file"
+
+process_config:
+  selectors :
+    - "input:not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']):not([type='file'])"
+    - "textarea"
+    - "select"
+    - "[contenteditable='true']"
+    - "[role='textbox']"
+    - "[role='searchbox']"
+    - "[role='combobox']"

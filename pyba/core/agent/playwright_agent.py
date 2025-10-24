@@ -6,8 +6,11 @@ from google import genai
 from google.genai.types import GenerateContentConfig
 from openai import OpenAI
 
+from pyba.utils.load_yaml import load_config
 from pyba.utils.prompts import system_instruction, general_prompt
 from pyba.utils.structure import PlaywrightResponse
+
+config = load_config()
 
 
 class PlaywrightAgent:
@@ -41,7 +44,7 @@ class PlaywrightAgent:
             self.agent = {
                 "client": self.openai_client,
                 "system_instruction": system_instruction,
-                "model": "gpt-4o",
+                "model": config["main_engine_configs"]["openai"]["model"],
                 "response_format": PlaywrightResponse,
             }
         else:
@@ -82,10 +85,6 @@ class PlaywrightAgent:
         """
         cleaned_dom["user_prompt"] = user_prompt
         prompt = general_prompt.format(**cleaned_dom)
-
-        print()
-        print(cleaned_dom)
-        print()
 
         if self.engine.provider == "openai":
             messages = [

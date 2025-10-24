@@ -14,6 +14,9 @@ from pyba.utils.exceptions import (
     ServerLocationUndefined,
     UnknownSiteChosen,
 )
+from pyba.utils.load_yaml import load_config
+
+config = load_config()
 
 
 class Engine:
@@ -38,16 +41,7 @@ class Engine:
         self.headless_mode = headless
         self.automated_login_engine_classes = []
 
-        # This needs to go inside a config file
-        selectors = (
-            "input:not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']):not([type='file'])",
-            "textarea",
-            "select",
-            "[contenteditable='true']",
-            "[role='textbox']",
-            "[role='searchbox']",
-            "[role='combobox']",
-        )
+        selectors = tuple(config["process_config"]["selectors"])
         self.combined_selector = ", ".join(selectors)
 
         self.handle_dependencies(handle_dependencies)
@@ -71,16 +65,16 @@ class Engine:
                 "You've defined both vertexai and openai models, we're choosing to go with openai!"
             )
             self.openai_api_key = openai_api_key
-            self.provider = "openai"
+            self.provider = config["main_engine_configs"]["openai"]["provider"]
 
         if vertexai_project_id:
             # Assuming that we don't have an openai_api_key
-            self.provider = "vertexai"
+            self.provider = config["main_engine_configs"]["vertexai"]["provider"]
             self.vertexai_project_id = vertexai_project_id
             self.location = vertexai_server_location
-            self.model = "gemini-2.5-pro"  # Keeping this as fixed
+            self.model = config["main_engine_configs"]["vertexai"]["model"]
         else:
-            self.provider = "openai"
+            self.provider = config["main_engine_configs"]["openai"]["provider"]
             self.openai_api_key = openai_api_key
 
     async def run(self, prompt: str = None, automated_login_sites: List[str] = None):
@@ -122,7 +116,7 @@ class Engine:
                 "current_url": None,
             }
 
-            for steps in range(0, 10):
+            for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
                 # First check if we need to login and run the scripts
                 # If loginengines have been chosen then self.automated_login_engine_classes will be populated
                 if self.automated_login_engine_classes:
@@ -152,7 +146,6 @@ class Engine:
                     print("Automated completed, agent returned None")
                     sys.exit(0)
 
-                print(f"\n\nThis is the action: {action}\n\n")
                 # If its not None, then perform it
                 await perform_action(page, action)
 

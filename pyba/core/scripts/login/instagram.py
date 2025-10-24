@@ -6,13 +6,15 @@ from dotenv import load_dotenv
 from playwright.async_api import Page
 
 from pyba.utils.exceptions import CredentialsnotSpecified
+from pyba.utils.load_yaml import load_config
 
 load_dotenv()  # Loading the username and passwords
+config = load_config()["automated_login_configs"]["instagram"]
 
-SCREEN_HEIGHT = 1280  # my screen's height, we need this to be in the config as well!
-x_from_left = 1000
-y_from_bottom = 1000
-y_top_left = SCREEN_HEIGHT - y_from_bottom
+screen_height = config["click_location"]["default_screen_height"]
+x_from_left = config["click_location"]["x_from_left"]
+y_from_bottom = config["click_location"]["y_from_bottom"]
+y_top_left = screen_height - y_from_bottom
 
 
 class InstagramLogin:
@@ -42,11 +44,7 @@ class InstagramLogin:
 
         page_url = self.page.url
 
-        # This needs to be taken from a config file. I will start maintaing that later
-        instagram_urls = [
-            "https://www.instagram.com/accounts/login/",
-            "https://www.instagram.com/",
-        ]
+        instagram_urls = list(config["urls"])
 
         # We'll have to clean the URL from all the url formatting to the basic thing and match it with this.
         # This can be done using urlparse and normalizing it first

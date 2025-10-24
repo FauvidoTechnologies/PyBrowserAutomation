@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from pyba.utils.common import url_entropy
+from pyba.utils.load_yaml import load_config
+
+config = load_config()
 
 
 class DOMExtraction:
@@ -40,26 +43,25 @@ class DOMExtraction:
 
         self.clickable_fields_flag = clickable_fields_flag
         # For testing fields
-        self.test_value = "PyBA"
+        self.test_value = config["main_engine_configs"]["input_field_test_value"]
 
     def _extract_clickables(self) -> List[dict]:
         soup = BeautifulSoup(self.html, "html.parser")
         candidates = []
 
-        for tag in soup.find_all(["a", "button", "area", "summary"]):
+        for tag in soup.find_all(
+            list(config["extraction_configs"]["clickables"]["clickable_field_selectors"])
+        ):
             if tag.name == "a":
                 href = tag.get("href", "").strip().lower()
                 if (
                     not href
                     or href
-                    in {
-                        "#",
-                        "#!",
-                        "/",
-                        "javascript:void(0)",
-                        "javascript:void(0);",
-                        "javascript: void(0)",
-                    }
+                    in set(
+                        config["extraction_configs"]["clickables"][
+                            "invalid_selector_field_hyperlinks"
+                        ]
+                    )
                     or href.startswith("javascript:")
                     or href.startswith("#")
                 ):
@@ -68,7 +70,9 @@ class DOMExtraction:
 
         for tag in soup.find_all("input"):
             t = tag.get("type", "").lower()
-            if t in ("button", "submit", "reset"):
+            if t in tuple(
+                config["extraction_configs"]["clickables"]["valid_button_types_for_clickables"]
+            ):
                 candidates.append(tag)
 
         candidates += soup.find_all(attrs={"onclick": True})
@@ -98,16 +102,7 @@ class DOMExtraction:
                 href = urljoin(self.base_url, href)
 
             # Not sure how junk these are but dropping them for now to avoid explosion of context
-            junk_keywords = [
-                "previous",
-                "next",
-                "slide",
-                "carousel",
-                "arrow",
-                "goto",
-                "nav",
-                "scroll",
-            ]
+            junk_keywords = config["extraction_configs"]["clickables"]["junk_keywords"]
             if any(k in text.lower() for k in junk_keywords):
                 continue
 
@@ -137,14 +132,9 @@ class DOMExtraction:
             if (
                 not href_lower
                 or href_lower
-                in {
-                    "#",
-                    "#!",
-                    "/",
-                    "javascript:void(0)",
-                    "javascript:void(0);",
-                    "javascript: void(0)",
-                }
+                in set(
+                    config["extraction_configs"]["clickables"]["invalid_selector_field_hyperlinks"]
+                )
                 or href_lower.startswith("javascript:")
                 or href_lower.startswith("#")
             ):
@@ -152,16 +142,19 @@ class DOMExtraction:
 
             # Have to figure out a bettery way to handle these
             # In the case where we do have relative URLs, we just make it absolute
+            full_url = urljoin(self.base_url, href)
+
             if any(
                 x in href_lower
-                for x in ["ref_=", "track", "redirect", "sessionid", "signin", "register"]
+                for x in list(config["extraction_configs"]["hyperlink"]["links_to_avoid"])
             ):
                 continue
-            full_url = urljoin(self.base_url, href)
 
             # Skipping any other type of URL. Will have to make this a confugrable parameter
             parsed = urlparse(full_url)
-            if parsed.scheme not in {"http", "https", "mailto", "ftp", "tel"}:
+            if parsed.scheme not in set(
+                config["extraction_configs"]["hyperlink"]["valid_schemas"]
+            ):
                 continue
 
             clean_hrefs.append(full_url)
@@ -216,9 +209,11 @@ class DOMExtraction:
                 input_type = (input_type or "text").lower().strip()
                 existing_value = await el.input_value() if tag in ["input", "textarea"] else ""
 
-                if tag not in {"input", "textarea", "select"}:
+                if tag not in set(config["extraction_configs"]["input_fields"]["valid_tags"]):
                     continue
-                if input_type in {"hidden", "submit", "button", "checkbox", "radio", "file"}:
+                if input_type in set(
+                    config["extraction_configs"]["input_fields"]["invalid_input_types"]
+                ):
                     continue
 
                 field_info = {

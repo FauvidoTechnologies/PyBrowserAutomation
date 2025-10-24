@@ -6,8 +6,10 @@ from dotenv import load_dotenv
 from playwright.async_api import Page
 
 from pyba.utils.exceptions import CredentialsnotSpecified
+from pyba.utils.load_yaml import load_config
 
 load_dotenv()  # Loading the username and passwords
+config = load_config()["automated_login_configs"]["facebook"]
 
 
 class FacebookLogin:
@@ -37,11 +39,7 @@ class FacebookLogin:
 
         page_url = self.page.url
 
-        # This needs to be taken from a config file. I will start maintaing that later
-        facebook_urls = [
-            "https://www.facebook.com/login/",
-            "https://www.facebook.com/",
-        ]
+        facebook_urls = list(config["urls"])
 
         # We'll have to clean the URL from all the url formatting to the basic thing and match it with this.
         # This can be done using urlparse and normalizing it first
