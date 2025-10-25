@@ -34,21 +34,35 @@ class PlaywrightActionPerformer:
         """
         click_target = self.action.click
 
-        # Handle relational hyperlinks seperately
-        if click_target.startswith("a[href=") or "href=" in click_target:
-            href = click_target.split('"')[1]
+        if click_target is None:
+            return
+
+        # We'll let playwright handle the locations
+        locator = self.page.locator(click_target)
+
+        try:
+            await locator.scroll_into_view_if_needed()
+        except Exception:
+            pass
+
+        # If its a link, we'll get the href and directly go there. This is easier than clicking
+        tag_name = await locator.evaluate("el => el.tagName.toLowerCase()")
+        href = None
+        if tag_name == "a":
+            href = await locator.get_attribute("href")
+
+        if href:
+            # Handle relative links
             if href.startswith("/"):
-                base_url = self.page.url.split("/")[0:3]
-                href = "/".join(base_url) + href
+                base_url = "/".join(self.page.url.split("/")[0:3])
+                href = base_url + href
             await self.page.goto(href)
             await self.page.wait_for_load_state("domcontentloaded")
         else:
-            locator = self.page.locator(click_target)
+            # Normal click
             try:
-                await locator.scroll_into_view_if_needed()
                 await locator.click(timeout=5000)
             except Exception:
-                # Try to force a click
                 await locator.click(force=True, timeout=5000)
 
     async def handle_double_click(self):
