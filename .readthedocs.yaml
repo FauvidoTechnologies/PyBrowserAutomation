@@ -1,0 +1,21 @@
+# .readthedocs.yaml
+version: 2
+
+# Tell Read the Docs how to build the project
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"        # Use a modern version; matches Sphinx requirement
+
+# Sphinx configuration
+sphinx:
+  configuration: docs/conf.py
+
+formats:
+  - html
+
+# Install dependencies
+python:
+  install:
+    - method: poetry install
+      path: .
