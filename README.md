@@ -1,12 +1,14 @@
 # PyBA - Python Browser Automations
 
-This is a browser automation software written in python. It can visit any website, automate testing, repetitive tasks, form filling and more.
+This is a browser automation software written in python. It can visit any website, automate testing, repetitive tasks, form filling and more. This library is specifically built for more exploratory analysis than EXACT outputs.
 
 ## Idea
 
-This library will allow you to run an inhouse playwright instance and automate any task. These tasks can be related to web-scraping, OSINT (OpenSource INTelligence), online shopping, form filling etc.
+This library will allow you to run an inhouse playwright instance and automate any task. These tasks can be related to web-scraping, OSINT (OpenSource INTelligence) etc.
 
 This is built on top of playwright and it requires either VertexAI or OpenAI API keys to do the "thinking" part of the process. The library also contains support to automatically login to your social media sites (you'll have to provide a username and password! Check the the [usage](#usage) section for more on that) so you can use it for SOCmint or simple automated social media interactions as well.
+
+We optionally allow you to enable tracing, the logs of which you can see on playwright's `traceviewer`.
 
 ## Why?
 
@@ -57,6 +59,8 @@ engine.sync_run(prompt="open instagram", automated_login_sites=["instagram"])
 ```
 
 > You can set the `automated_login_sites` argument as whichever website you want to automatially login to.
+
+For more use cases, check out the [examples](./examples) direcrtory.
 
 This is useful in case of OSINT when you inevitably come across a profile that is hidden behind the login wall. Setting that field will trigger the login scripts to run after it verifies the site.
 
