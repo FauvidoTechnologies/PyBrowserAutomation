@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 
 from playwright.async_api import async_playwright
+from playwright_stealth import Stealth
 
 from pyba.core.agent.playwright_agent import PlaywrightAgent
 from pyba.core.lib import DOMExtraction, HandleDependencies
@@ -118,7 +119,7 @@ class Engine:
                 else:
                     raise UnknownSiteChosen(LoginEngine.available_engines())
 
-        async with async_playwright() as p:
+        async with Stealth().use_async(async_playwright()) as p:
             self.browser = await p.chromium.launch(headless=False)
 
             # Start tracing if enabled

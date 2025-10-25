@@ -1,6 +1,9 @@
 pyba.core package
 =================
 
+.. note::
+We're now using the `stealth` playwright browsers which nicely masks the drivers
+
 Subpackages
 -----------
 
