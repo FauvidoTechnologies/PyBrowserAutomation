@@ -14,5 +14,6 @@ sphinx:
 # Install dependencies
 python:
   install:
-    - method: poetry install
-      path: .
+    - method: pip
+      requirements: docs/requirements.txt
+
