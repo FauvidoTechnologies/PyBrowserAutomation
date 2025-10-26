@@ -10,7 +10,7 @@ from pyba.utils.load_yaml import load_config
 from pyba.utils.prompts import system_instruction, general_prompt
 from pyba.utils.structure import PlaywrightResponse
 
-config = load_config()
+config = load_config("general")
 
 
 class PlaywrightAgent:

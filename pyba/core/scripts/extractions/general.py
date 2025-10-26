@@ -8,7 +8,10 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from pyba.utils.common import url_entropy
 from pyba.utils.load_yaml import load_config
 
-config = load_config()
+general_config = load_config("general")
+config = load_config("extraction")[
+    "general"
+]  # This means we're referring to the general extraction class
 
 
 class GeneralDOMExtraction:
@@ -45,7 +48,7 @@ class GeneralDOMExtraction:
 
         self.clickable_fields_flag = clickable_fields_flag
         # For testing fields
-        self.test_value = config["main_engine_configs"]["input_field_test_value"]
+        self.test_value = general_config["main_engine_configs"]["input_field_test_value"]
 
     def _extract_clickables(self) -> List[dict]:
         soup = BeautifulSoup(self.html, "html.parser")

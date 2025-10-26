@@ -20,7 +20,7 @@ from pyba.utils.exceptions import (
 )
 from pyba.utils.load_yaml import load_config
 
-config = load_config()
+config = load_config("general")
 
 
 class Engine:

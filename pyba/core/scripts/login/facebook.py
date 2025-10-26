@@ -9,7 +9,7 @@ from pyba.utils.exceptions import CredentialsnotSpecified
 from pyba.utils.load_yaml import load_config
 
 load_dotenv()  # Loading the username and passwords
-config = load_config()["automated_login_configs"]["facebook"]
+config = load_config("general")["automated_login_configs"]["facebook"]
 
 
 class FacebookLogin:

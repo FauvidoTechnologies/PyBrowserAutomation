@@ -1,5 +1,5 @@
 # Imports for the extraction scripts
-from pyba.core.scripts.extraction_scripts import ExtractionEngines
+from pyba.core.scripts.extractions import ExtractionEngines
 
 # Imports for the login scripts
 from pyba.core.scripts.login import InstagramLogin, FacebookLogin

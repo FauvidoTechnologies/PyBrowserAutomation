@@ -1,5 +1,5 @@
-from pyba.core.scripts.extraction_scripts.general import GeneralDOMExtraction
-from pyba.core.scripts.extraction_scripts.youtube_ import YouTubeDOMExtraction
+from pyba.core.scripts.extractions.general import GeneralDOMExtraction
+from pyba.core.scripts.extractions.youtube_ import YouTubeDOMExtraction
 
 
 class ExtractionEngines:

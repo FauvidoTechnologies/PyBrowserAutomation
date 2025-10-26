@@ -1,0 +1,61 @@
+general:    # The general extraction class
+  extraction_configs:
+    clickables:
+      clickable_field_selectors:
+        - "a"
+        - "button"
+        - "area"
+        - "summary"
+      invalid_selector_field_hyperlinks:
+        - "#"
+        - "#!"
+        - "/"
+        - "javascript:void(0)"
+        - "javascript:void(0);"
+        - "javascript: void(0)"
+      valid_button_types_for_clickables:
+        - "button"
+        - "submit"
+        - "reset"
+      junk_keywords:    # These are the ones which we are going to skip
+        - "previous"
+        - "next"
+        - "slide"
+        - "carousel"
+        - "arrow"
+        - "goto"
+        - "nav"
+        - "scroll"
+    hyperlinks:
+      links_to_avoid:
+        - "ref_="
+        - "track"
+        - "redirect"
+        - "sessionid"
+        - "signin"
+        - "register"
+      valid_schemas:
+        - "http"
+        - "https"
+        - "mailto"
+        - "ftp"
+        - "tel"
+    input_fields:
+      valid_tags:
+        - "input"
+        - "textarea"
+        - "select"
+      invalid_input_types:
+        - "hidden"
+        - "submit"
+        - "button"
+        - "checkbox"
+        - "radio"
+        - "file"
+
+youtube:
+  link_selector: "a[href^='/watch?v=']" # The selector used in js to get the right hrefs: We know its a relative link that starts with /watch?v=
+  title_selector: "#video-title"  # The selector used when a search query is entered: This element will provide the title in plain text
+  label_name: "aria-label"  # YouTube uses aria-label for accessibility reqirements (these are unlikely to change in the near future)
+  usual_title_name: "title" # Simple enough, probably shouldn't change very frequently
+  usual_youtube_relative_link_format: "/watch?v=" # This is how relative links are present in YouTube DOMs
