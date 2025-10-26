@@ -8,7 +8,7 @@ This library will allow you to run an inhouse playwright instance and automate a
 
 This is built on top of playwright and it requires either VertexAI or OpenAI API keys to do the "thinking" part of the process. The library also contains support to automatically login to your social media sites (you'll have to provide a username and password! Check the the [usage](#usage) section for more on that) so you can use it for SOCmint or simple automated social media interactions as well.
 
-We optionally allow you to enable tracing, the logs of which you can see on playwright's `traceviewer`.
+We optionally allow you to enable tracing, the logs of which you can see on playwright's `traceviewer`. We also support logging and config files should you want to change any defaults
 
 ## Why?
 
