@@ -8,9 +8,9 @@ from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
 from pyba.core.agent.playwright_agent import PlaywrightAgent
-from pyba.core.lib import DOMExtraction, HandleDependencies
+from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
-from pyba.core.scripts import LoginEngine
+from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.logger import get_logger
 from pyba.utils.exceptions import (
     PromptNotPresent,
@@ -85,7 +85,7 @@ class Engine:
             raise ServerLocationUndefined(vertexai_server_location)
 
         if openai_api_key and vertexai_project_id:
-            self.log.warn(
+            self.log.warning(
                 "You've defined both vertexai and openai models, we're choosing to go with openai!"
             )
             self.openai_api_key = openai_api_key
@@ -188,7 +188,7 @@ class Engine:
                             pass
                         else:
                             # This means it failed
-                            self.log.warn(f"Login attempted at {self.page.url} but failed!")
+                            self.log.warning(f"Login attempted at {self.page.url} but failed!")
 
                 # Say we're going to run only 10 steps so far, so after this no more automation
                 # Get an actionable PlaywrightResponse from the models
@@ -233,7 +233,7 @@ class Engine:
                 base_url = self.page.url
 
                 # Then we need to extract the new cleaned_dom from the page
-                extractionEngine = DOMExtraction(
+                extractionEngine = ExtractionEngines.general(
                     html=page_html, body_text=body_text, elements=elements, base_url=base_url
                 )
 

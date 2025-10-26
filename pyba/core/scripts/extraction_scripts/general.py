@@ -11,7 +11,7 @@ from pyba.utils.load_yaml import load_config
 config = load_config()
 
 
-class DOMExtraction:
+class GeneralDOMExtraction:
     """
     Given the DOM from the URL, this class provides functions to extract it properly
 
@@ -22,6 +22,8 @@ class DOMExtraction:
 
     Note that extracing all clickable elements might get messy so we'll use that only when
     the total length is lower than a certain threshold.
+
+    This is the general extraction. Some specific websites require a different way to do this. Checkout the README for more.
     """
 
     def __init__(
