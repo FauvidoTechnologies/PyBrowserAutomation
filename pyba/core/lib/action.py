@@ -30,14 +30,19 @@ class PlaywrightActionPerformer:
     async def handle_click(self):
         """
         Handle's clicking elements. Has additional checks to ensure that
-        the element is not actually a relational hyperlink
+        the element is not actually a relational hyperlink.
+
+        This is done in the following ways:
+
+        - We first check if the click element is actually an <a> tag
+        - Or if it has a closest ancestory <a> tag
+
+        In either case we extract the href from that <a> tag and directly goto that
         """
         click_target = self.action.click
-
         if click_target is None:
             return
 
-        # We'll let playwright handle the locations
         locator = self.page.locator(click_target)
 
         try:
@@ -45,11 +50,16 @@ class PlaywrightActionPerformer:
         except Exception:
             pass
 
-        # If its a link, we'll get the href and directly go there. This is easier than clicking
-        tag_name = await locator.evaluate("el => el.tagName.toLowerCase()")
-        href = None
-        if tag_name == "a":
-            href = await locator.get_attribute("href")
+        # Trying to find a hyperlink element (the target or its ancestor)
+        # https://playwright.dev/python/docs/api/class-locator#locator-evaluate -> Tests a javascript expression
+        href = await locator.evaluate(
+            """
+            el => {
+                let link = el.tagName.toLowerCase() === 'a' ? el : el.closest('a');
+                return link ? link.getAttribute('href') : null;
+            }
+        """
+        )
 
         if href:
             # Handle relative links
@@ -59,7 +69,6 @@ class PlaywrightActionPerformer:
             await self.page.goto(href)
             await self.page.wait_for_load_state("domcontentloaded")
         else:
-            # Normal click
             try:
                 await locator.click(timeout=5000)
             except Exception:

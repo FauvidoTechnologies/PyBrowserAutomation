@@ -208,7 +208,26 @@ class Engine:
                 # If its not None, then perform it
                 await perform_action(self.page, action)
 
-                page_html = await self.page.content()
+                try:
+                    self.page.wait_for_load_state(
+                        "networkidle", timeout=1000
+                    )  # Wait for a second for network calls to stablize
+                    page_html = await self.page.content()
+                except Exception:
+                    # We might get a "Unable to retrieve content because the page is navigating and changing the content" exception
+                    # This might happen because page.content() will start and issue an evaluate, while the page is reloading and making network calls
+                    # So, once it gets a response, it commits it and clears the execution contents so page.content() fails.
+                    # See https://github.com/microsoft/playwright/issues/16108
+
+                    # We might choose to wait for networkidle -> https://github.com/microsoft/playwright/issues/22897
+                    try:
+                        self.page.wait_for_load_state("networkidle", timeout=2000)
+                    except Exception:
+                        # If networkidle never happens, then we'll try a direct wait
+                        await asyncio.sleep(3)
+
+                    page_html = await self.page.content()
+
                 body_text = await self.page.inner_text("body")
                 elements = await self.page.query_selector_all(self.combined_selector)
                 base_url = self.page.url
@@ -221,6 +240,8 @@ class Engine:
                 # Passing in known_fields for the input fields that we already know off so that
                 # its easier for the extraction engine to work
                 cleaned_dom = await extractionEngine.extract()
+
+                print(f"This is the cleaned_dom: {cleaned_dom}")
 
                 cleaned_dom["current_url"] = base_url
 
