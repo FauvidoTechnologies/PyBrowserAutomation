@@ -11,6 +11,7 @@ from pyba.core.agent.playwright_agent import PlaywrightAgent
 from pyba.core.lib import DOMExtraction, HandleDependencies
 from pyba.core.lib.action import perform_action
 from pyba.core.scripts import LoginEngine
+from pyba.logger import get_logger
 from pyba.utils.exceptions import (
     PromptNotPresent,
     ServiceNotSelected,
@@ -34,6 +35,7 @@ class Engine:
         vertexai_server_location: str = None,
         headless: bool = config["main_engine_configs"]["headless_mode"],
         handle_dependencies: bool = config["main_engine_configs"]["handle_dependencies"],
+        use_logger: bool = config["main_engine_configs"]["use_logger"],
         enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
         trace_save_directory: str = None,
     ):
@@ -43,6 +45,7 @@ class Engine:
             vertexai_project_id: Create a VertexAI project to use that instead of OpenAI
             vertexai_server_location: VertexAI server location
             headless: Choose if you want to run in the headless mode or not
+            use_logger: Choose if you want to use the logger (that is enable logging of data)
             handle_dependencies: Choose if you want to automatically install dependencies during runtime
             enable_tracing: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
             trace_save_directory: The directory where you want the .zip file to be saved
@@ -52,6 +55,11 @@ class Engine:
         self.provider = None
         self.session_id = uuid.uuid4().hex
         self.headless_mode = headless
+        self.use_logger = use_logger
+
+        # Initialising the loggering depending on whether the use_logger boolean is on
+        self.log = get_logger(use_logger=self.use_logger)
+
         self.tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
 
@@ -77,7 +85,7 @@ class Engine:
             raise ServerLocationUndefined(vertexai_server_location)
 
         if openai_api_key and vertexai_project_id:
-            print(
+            self.log.warn(
                 "You've defined both vertexai and openai models, we're choosing to go with openai!"
             )
             self.openai_api_key = openai_api_key
@@ -120,7 +128,7 @@ class Engine:
                     raise UnknownSiteChosen(LoginEngine.available_engines())
 
         async with Stealth().use_async(async_playwright()) as p:
-            self.browser = await p.chromium.launch(headless=False)
+            self.browser = await p.chromium.launch(headless=self.headless_mode)
 
             # Start tracing if enabled
             if self.tracing:
@@ -172,13 +180,15 @@ class Engine:
                         out_flag = await engine_instance.run()
                         if out_flag:
                             # This means it was True and we successfully logged in
-                            print(f"Logged in successfully through the {self.page.url} link")
+                            self.log.success(
+                                f"Logged in successfully through the {self.page.url} link"
+                            )
                         elif out_flag is None:
                             # This means it wasn't for a login page for this engine
                             pass
                         else:
                             # This means it failed
-                            print(f"Login attempted at {self.page.url} but failed!")
+                            self.log.warn(f"Login attempted at {self.page.url} but failed!")
 
                 # Say we're going to run only 10 steps so far, so after this no more automation
                 # Get an actionable PlaywrightResponse from the models
@@ -187,13 +197,14 @@ class Engine:
                         cleaned_dom=cleaned_dom, user_prompt=prompt
                     )
                 except Exception as e:
-                    print(f"something went wrong in obtaining the response: {e}")
+                    self.log.error(f"something went wrong in obtaining the response: {e}")
                     action = None
 
                 if action is None or all(value is None for value in vars(action).values()):
-                    print("Automation completed, agent has returned None")
+                    self.log.success("Automation completed, agent has returned None")
                     await self.shut_down()
 
+                self.log.action(action)
                 # If its not None, then perform it
                 await perform_action(self.page, action)
 
@@ -222,7 +233,7 @@ class Engine:
         """
         if self.tracing:
             trace_path = self.trace_dir / f"{self.session_id}_trace.zip"
-            print(f"This is the tracepath: {trace_path}")
+            self.log.info(f"This is the tracepath: {trace_path}")
             await self.context.tracing.stop(path=str(trace_path))
 
         await self.context.close()

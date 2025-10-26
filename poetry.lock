@@ -256,7 +256,6 @@ files = [
     {file = "colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6"},
     {file = "colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44"},
 ]
-markers = {main = "platform_system == \"Windows\"", docs = "sys_platform == \"win32\""}
 
 [[package]]
 name = "distro"
@@ -1581,4 +1580,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<4.0"
-content-hash = "7803be6e421341d2d1b0a9ab608afd21e34dc3c4b24daa7ef4411efc750d441b"
+content-hash = "51eaceead0e581cf7f834e003989592cd633fda13ec3bbdfa16950ab117df8f4"
