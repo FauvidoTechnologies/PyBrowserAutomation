@@ -235,22 +235,27 @@ class Engine:
                 # Then we need to extract the new cleaned_dom from the page
                 # Passing in known_fields for the input fields that we already know off so that
                 # its easier for the extraction engine to work
-                general_extraction_engine = ExtractionEngines.general(
-                    html=page_html, body_text=body_text, elements=elements, base_url=base_url
+                extraction_engine = ExtractionEngines(
+                    html=page_html,
+                    body_text=body_text,
+                    elements=elements,
+                    base_url=base_url,
+                    page=self.page,
                 )
 
-                cleaned_dom = await general_extraction_engine.extract()
+                # Perform an all out extraction
+                cleaned_dom = await extraction_engine.extract_all()
 
-                # We need to move this from here to the extraction engine
-                if "youtube.com" in base_url:  # If we have youtube as the starting baseurl
-                    # Usually the dom extraction is pretty fast but the videos take some time to load up in the javascript
-                    # Hence a small wait here helps in loading that
-                    await asyncio.sleep(3)
+                # # We need to move this from here to the extraction engine
+                # if "youtube.com" in base_url:  # If we have youtube as the starting baseurl
+                #     # Usually the dom extraction is pretty fast but the videos take some time to load up in the javascript
+                #     # Hence a small wait here helps in loading that
+                #     await asyncio.sleep(3)
 
-                    # Move this to the extraction engine
-                    youtube_extraction_engine = ExtractionEngines.youtube(self.page)
-                    youtube_dom = await youtube_extraction_engine.extract()
-                    cleaned_dom["youtube_specific"] = youtube_dom
+                #     # Move this to the extraction engine
+                #     youtube_extraction_engine = ExtractionEngines.youtube(self.page)
+                #     youtube_dom = await youtube_extraction_engine.extract()
+                #     cleaned_dom["youtube_specific"] = youtube_dom
 
                 cleaned_dom["current_url"] = base_url
 
