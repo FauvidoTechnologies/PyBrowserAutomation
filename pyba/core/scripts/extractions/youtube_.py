@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from playwright.async_api import Page
 
 from pyba.utils.load_yaml import load_config
@@ -23,6 +25,11 @@ class YouTubeDOMExtraction:
         self.page = page
         self.config = load_config("extraction")["youtube"]
 
+        # TODO: take care of the fact that we might define multiple functions later
+        # We'll be using the same javascript for all extraction functions to be executed in the browser
+        js_file_path = Path(__file__).parent.parent / "js/extractions.js"
+        self.js_function_string = js_file_path.read_text()
+
     async def extract_links_and_titles(self):
         """
         Extracts all the video links and their title names from a YouTube page. Its simply checking for
@@ -31,42 +38,12 @@ class YouTubeDOMExtraction:
         we'd need to use BeautifulSoup.
         """
 
-        js_code = """
-            (config) => {
-                const anchors = Array.from(document.querySelectorAll(config.link_selector));
-                const results = [];
-
-                for (const a of anchors) {
-                    let titleEl = null;
-
-                    titleEl = a.querySelector(config.title_selector);
-
-                    let title =
-                        titleEl?.textContent?.trim() ||
-                        a.getAttribute(config.usual_title_name) ||        // The second fallback from titleEl
-                        a.getAttribute(config.label_name) ||     // The third fallback
-                        "";
-
-                    if (title && a.href && a.getAttribute('href').startsWith(config.usual_youtube_relative_link_format)) {
-                        results.push({
-                            title,
-                            href: new URL(a.getAttribute('href'), window.location.origin).href
-                        });
-                    }
-                }
-
-                // Removing duplicates
-                const seen = new Set();
-                return results.filter(v => {
-                    if (seen.has(v.href)) return false;
-                    seen.add(v.href);
-                    return true;
-                });
-            }
-        """
-
         # TODO: As a fallback mechanism we can also use bs4 in here
-        videos = await self.page.evaluate(js_code, self.config)
-
+        videos = await self.page.evaluate(self.js_function_string, self.config)
         # We don't want to touch the page again or any other system
+        return videos
+
+    async def extract(self):
+        print("inside extract")
+        videos = await self.extract_links_and_titles()
         return videos

@@ -209,7 +209,7 @@ class Engine:
                 await perform_action(self.page, action)
 
                 try:
-                    self.page.wait_for_load_state(
+                    await self.page.wait_for_load_state(
                         "networkidle", timeout=1000
                     )  # Wait for a second for network calls to stablize
                     page_html = await self.page.content()
@@ -221,7 +221,7 @@ class Engine:
 
                     # We might choose to wait for networkidle -> https://github.com/microsoft/playwright/issues/22897
                     try:
-                        self.page.wait_for_load_state("networkidle", timeout=2000)
+                        await self.page.wait_for_load_state("networkidle", timeout=2000)
                     except Exception:
                         # If networkidle never happens, then we'll try a direct wait
                         await asyncio.sleep(3)
@@ -233,15 +233,24 @@ class Engine:
                 base_url = self.page.url
 
                 # Then we need to extract the new cleaned_dom from the page
-                extractionEngine = ExtractionEngines.general(
+                # Passing in known_fields for the input fields that we already know off so that
+                # its easier for the extraction engine to work
+                general_extraction_engine = ExtractionEngines.general(
                     html=page_html, body_text=body_text, elements=elements, base_url=base_url
                 )
 
-                # Passing in known_fields for the input fields that we already know off so that
-                # its easier for the extraction engine to work
-                cleaned_dom = await extractionEngine.extract()
+                cleaned_dom = await general_extraction_engine.extract()
 
-                print(f"This is the cleaned_dom: {cleaned_dom}")
+                # We need to move this from here to the extraction engine
+                if "youtube.com" in base_url:  # If we have youtube as the starting baseurl
+                    # Usually the dom extraction is pretty fast but the videos take some time to load up in the javascript
+                    # Hence a small wait here helps in loading that
+                    await asyncio.sleep(3)
+
+                    # Move this to the extraction engine
+                    youtube_extraction_engine = ExtractionEngines.youtube(self.page)
+                    youtube_dom = await youtube_extraction_engine.extract()
+                    cleaned_dom["youtube_specific"] = youtube_dom
 
                 cleaned_dom["current_url"] = base_url
 
