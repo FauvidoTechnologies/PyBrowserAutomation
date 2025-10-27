@@ -246,17 +246,6 @@ class Engine:
                 # Perform an all out extraction
                 cleaned_dom = await extraction_engine.extract_all()
 
-                # # We need to move this from here to the extraction engine
-                # if "youtube.com" in base_url:  # If we have youtube as the starting baseurl
-                #     # Usually the dom extraction is pretty fast but the videos take some time to load up in the javascript
-                #     # Hence a small wait here helps in loading that
-                #     await asyncio.sleep(3)
-
-                #     # Move this to the extraction engine
-                #     youtube_extraction_engine = ExtractionEngines.youtube(self.page)
-                #     youtube_dom = await youtube_extraction_engine.extract()
-                #     cleaned_dom["youtube_specific"] = youtube_dom
-
                 cleaned_dom["current_url"] = base_url
 
         await self.shut_down()
