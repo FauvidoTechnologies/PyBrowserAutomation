@@ -104,6 +104,7 @@ Dependency management
 You can also install the dependencies manually
 
 .. code-block:: bash
+
    playwright install-deps # Install dependencies
    playwright install      # Install browsers
 
