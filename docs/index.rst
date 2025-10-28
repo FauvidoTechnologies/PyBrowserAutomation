@@ -6,7 +6,7 @@
 pyba documentation
 ==================
 
-PyBA is short for "Python-Browser-Automation". Simply put, it allows you to enter tasks in natural language and have them be executed. It is built on top of ``playwright`` and it supports traceviewing optionally.
+PyBA is short for "Python-Browser-Automation". It allows you to enter tasks in natural language and have them be executed on the browser. It is built on top of ``playwright`` and it supports traceviewing optionally.
 
 .. note::
    pyba was specifically built for OSINT purposes.
@@ -17,9 +17,12 @@ The main differentiating factors between pyba and others are as follows:
 - Generates multiple ``plans`` optionally to achieve a particular task and performs them in parallel
 - Perfect for use cases when the task is **not** extremely clear and more exploratory in nature
 
+The current software version is ``0.1.7`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    modules
    pyba
+   usage
