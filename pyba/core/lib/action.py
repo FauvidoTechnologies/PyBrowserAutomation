@@ -4,6 +4,7 @@ from playwright.async_api import Page
 
 from pyba.utils.common import is_absolute_url
 from pyba.utils.structure import PlaywrightAction
+from playwright._impl._errors import Error
 
 
 class PlaywrightActionPerformer:
@@ -55,15 +56,27 @@ class PlaywrightActionPerformer:
 
         # Trying to find a hyperlink element (the target or its ancestor)
         # https://playwright.dev/python/docs/api/class-locator#locator-evaluate -> Tests a javascript expression
-        href = await locator.evaluate(
+        try:
+            href = await locator.evaluate(
+                """
+                el => {
+                    let link = el.tagName.toLowerCase() === 'a' ? el : el.closest('a');
+                    return link ? link.getAttribute('href') : null;
+                }
             """
-            el => {
-                let link = el.tagName.toLowerCase() === 'a' ? el : el.closest('a');
-                return link ? link.getAttribute('href') : null;
-            }
-        """
-        )
-
+            )
+        except Error as e:
+            # Catching a strict mode violation and defaulting to the first click
+            # Unfortunately playwright errors aren't fully specific
+            first_locator = locator.first
+            href = await first_locator.evaluate(
+                """
+                el => {
+                    let link = el.tagName.toLowerCase() === 'a' ? el : el.closest('a');
+                    return link ? link.getAttribute('href') : null;
+                }
+                """
+            )
         if href:
             # Handling relative links by checking for a schema and a netloc (host + optional port)
             if not is_absolute_url(href):
