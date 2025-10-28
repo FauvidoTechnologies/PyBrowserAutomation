@@ -1,5 +1,8 @@
+from urllib.parse import urljoin
+
 from playwright.async_api import Page
 
+from pyba.utils.common import is_absolute_url
 from pyba.utils.structure import PlaywrightAction
 
 
@@ -62,10 +65,10 @@ class PlaywrightActionPerformer:
         )
 
         if href:
-            # Handle relative links
-            if href.startswith("/"):
-                base_url = "/".join(self.page.url.split("/")[0:3])
-                href = base_url + href
+            # Handling relative links by checking for a schema and a netloc (host + optional port)
+            if not is_absolute_url(href):
+                base_url = "/".join(self.page.url.split("/")[0:3])  # This won't be 0:3 always
+                href = urljoin(base_url, href)
             await self.page.goto(href)
             await self.page.wait_for_load_state("domcontentloaded")
         else:
