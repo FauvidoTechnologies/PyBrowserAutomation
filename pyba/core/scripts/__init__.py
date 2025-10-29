@@ -2,7 +2,7 @@
 from pyba.core.scripts.extractions import ExtractionEngines
 
 # Imports for the login scripts
-from pyba.core.scripts.login import InstagramLogin, FacebookLogin
+from pyba.core.scripts.login import InstagramLogin, FacebookLogin, GmailLogin
 
 
 class LoginEngine:
@@ -12,6 +12,7 @@ class LoginEngine:
 
     instagram = InstagramLogin
     facebook = FacebookLogin
+    gmail = GmailLogin
 
     @classmethod
     def available_engines(cls):

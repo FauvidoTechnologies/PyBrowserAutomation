@@ -38,6 +38,10 @@ automated_login_configs:
       default_screen_height: 1280
       x_from_left: 1000
       y_from_bottom: 1000
+  gmail:
+    urls:
+      - "https://accounts.google.com/"
+      - "https://accounts.google.com/v3/signin/identifier/"
 
 process_config:
   selectors :
