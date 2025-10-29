@@ -1,10 +1,10 @@
 from urllib.parse import urljoin
 
+from playwright._impl._errors import Error
 from playwright.async_api import Page
 
 from pyba.utils.common import is_absolute_url
 from pyba.utils.structure import PlaywrightAction
-from playwright._impl._errors import Error
 
 
 class PlaywrightActionPerformer:
@@ -65,7 +65,7 @@ class PlaywrightActionPerformer:
                 }
             """
             )
-        except Error as e:
+        except Error:
             # Catching a strict mode violation and defaulting to the first click
             # Unfortunately playwright errors aren't fully specific
             first_locator = locator.first

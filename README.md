@@ -1,6 +1,6 @@
 # PyBA - Python Browser Automations
 
-This is a browser automation software written in python. It can visit any website, automate testing, repetitive tasks, form filling and more. This library is specifically built for more exploratory analysis than EXACT outputs.
+This is a no-code browser automation software written in python. It can visit any website, automate testing, repetitive tasks, form filling and more. This library is specifically built for more exploratory analysis than EXACT inputs (though it supports both through different modes).
 
 ## Idea
 
@@ -32,6 +32,9 @@ pip install .
 
 ## Usage
 
+> [!NOTE]
+> For more detailed instructions visit the [docs](https://pyba.readthedocs.io/)
+
 - Import the main engine using:
 
 ```python3
@@ -55,15 +58,7 @@ engine = Engine(openai_api_key="", handle_dependencies=False)
 - Run the `sync` endpoint using `engine.sync_run()`
 
 ```python3
-engine.sync_run(prompt="open instagram", automated_login_sites=["instagram"])
+engine.sync_run(prompt="open instagram")
 ```
 
-> You can set the `automated_login_sites` argument as whichever website you want to automatially login to.
-
 For more use cases, check out the [examples](./examples) direcrtory.
-
-This is useful in case of OSINT when you inevitably come across a profile that is hidden behind the login wall. Setting that field will trigger the login scripts to run after it verifies the site.
-
-If you don't want to automatically login, don't set this value. The default behavior is to not do any such thing.
-
-- We also have an async endpoint if you need. That can be called using just `.run()`
