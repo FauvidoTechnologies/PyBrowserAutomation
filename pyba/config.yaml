@@ -30,18 +30,37 @@ automated_login_configs:
     urls:
       - "https://www.facebook.com/login/"
       - "https://www.facebook.com/"
+    username_selector: 'input[name="email"]'
+    password_selector: 'input[name="pass"]'
+    submit_selector: 'button[type="submit"]'
   instagram:
     urls:
       - "https://www.instagram.com/accounts/login/"
       - "https://www.instagram.com/"
+    username_selector: 'input[name="username"]'   # These can be later defined as a list
+    password_selector: 'input[name="password"]'
+    submit_selector: 'button[type="submit"]'
+    fall_back:
+      username_selector: 'input[name="email"]'
+      password_selector: 'input[name="pass"]'
     click_location:   # Change the location if your screen size is different, this will work as is for 1900x1280
       default_screen_height: 1280
       x_from_left: 1000
       y_from_bottom: 1000
+    additional_args:
+      additional_selector_1: 'text="Not now"'
+      additional_selector_2: 'text="OK"'
   gmail:
     urls:
       - "https://accounts.google.com/"
       - "https://accounts.google.com/v3/signin/identifier/"
+    username_selector: 'input[name="identifier"]'
+    submit_selector: 'text="Next"'
+    password_selector: 'input[name="Passwd"]'
+    fall_back:
+      password_selector: 'input[name="password"]'
+    uses_2FA: True
+    2FA_wait_value: "mail\\.google\\.com"
 
 process_config:
   selectors :

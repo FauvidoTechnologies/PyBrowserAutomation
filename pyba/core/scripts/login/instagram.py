@@ -75,33 +75,36 @@ class InstagramLogin:
 
         # Now run the script
         try:
-            await self.page.wait_for_selector('input[name="username"]')
-            await self.page.fill('input[name="username"]', self.username)
-            await self.page.fill('input[name="password"]', self.password)
+            await self.page.wait_for_selector(config["username_selector"])
+            await self.page.fill(config["username_selector"], self.username)
+            await self.page.fill(config["password_selector"], self.password)
 
-            await self.page.click('button[type="submit"]')
+            await self.page.click()
         except Exception:
-            # Now this is bad
             try:
                 # Alternate fields that instagram uses
-                await self.page.wait_for_selector('input[name="email"]')
-                await self.page.fill('input[name="email"]', self.username)
-                await self.page.fill('input[name="pass"]', self.password)
+                await self.page.wait_for_selector(config["fallback"]["username_selector"])
+                await self.page.fill(config["fallback"]["username_selector"], self.username)
+                await self.page.fill(config["fallback"]["password_selector"], self.password)
 
-                await self.page.click('button[type="submit"]')
+                await self.page.click(config["submit_selector"])
             except Exception:
                 return False
         # There is a not-now button that we need to click for not saving our information
         try:
-            await self.page.wait_for_selector('text="Not now"', timeout=30000)
-            await self.page.click('text="Not now"')
+            await self.page.wait_for_selector(
+                config["additional_args"]["additional_selector_1"], timeout=30000
+            )
+            await self.page.click(config["additional_args"]["additional_selector_1"])
         except Exception:
             # This means that never came so we're done.
             pass
 
         # Sometimes these things also come up for new updates
         try:
-            await self.page.wait_for_selector('text="OK"', timeout=10000)
+            await self.page.wait_for_selector(
+                config["additional_args"]["additional_selector_2"], timeout=10000
+            )
             await self.page.mouse.click(x_from_left, y_top_left)
         except Exception:
             # This means this never came up

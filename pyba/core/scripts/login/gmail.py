@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -29,7 +30,8 @@ class GmailLogin:
         if self.username is None or self.password is None:
             raise CredentialsnotSpecified(self.engine_name)
 
-        self.uses_2FA = True
+        self.uses_2FA = config["uses_2FA"]
+        self.final_2FA_url = re.compile(config["2FA_wait_value"])
 
     def verify_login_page(self):
         """
@@ -38,19 +40,12 @@ class GmailLogin:
         """
 
         page_url = self.page.url
-
-        print(f"this is the page_url: {page_url}")
-
         gmail_urls = list(config["urls"])
-        print(gmail_urls)
 
         # We'll have to clean the URL from all the url formatting to the basic thing and match it with this.
         # This can be done using urlparse and normalizing it first
         parsed = urlparse(page_url)
-        print(f"parsed page url: {parsed}")
         normalized_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-
-        print(f"normalized_url: {normalized_url}")
 
         if not normalized_url.endswith("/"):
             normalized_url += "/"
@@ -63,24 +58,26 @@ class GmailLogin:
 
     async def run(self) -> Optional[bool]:
         """
-        The idea is to take in the username and password from the .env file for now
-        and simply use that to execute this function
+        Take in the username and password from the .env file and use
+        them to execute this function
 
         Returns:
                 `None` if we're not supposed to launch the automated login script here
                 `True/False` if the login was successful or a failure
+
+        The return type triggers the main execution loop of the login status
         """
         val = self.verify_login_page()
         if not val:
             return None
 
-        # Now run the script
+        # Run the script
         try:
-            await self.page.wait_for_selector('input[name="identifier"]')
-            await self.page.fill('input[name="identifier"]', self.username)
+            await self.page.wait_for_selector(config["username_selector"])
+            await self.page.fill(config["username_selector"], self.username)
 
             await self.page.click(
-                'text="Next"'
+                config["submit_selector"]
             )  # It's usually a next button in gmail/accounts.google.com
         except Exception:
             # Google's too smart
@@ -88,18 +85,18 @@ class GmailLogin:
 
         try:
             # TODO: Move this to config and take type=password as well into consideration
-            await self.page.wait_for_selector('input[name="Passwd"]')
-            await self.page.fill('input[name="Passwd"]', self.password)
+            await self.page.wait_for_selector(config["password_selector"])
+            await self.page.fill(config["password_selector"], self.password)
 
-            await self.page.click('text="Next"')
+            await self.page.click(config["submit_selector"])
         except Exception:
             # Now this is bad
             try:
                 # Alternate fields that gmail might use uses
-                await self.page.wait_for_selector('input[name="password"]')
-                await self.page.fill('input[name="password"]', self.password)
+                await self.page.wait_for_selector(config["fall_back"]["password_selector"])
+                await self.page.fill(config["fall_back"]["password_selector"], self.password)
 
-                await self.page.click('text="Next"')
+                await self.page.click(config["submit_selector"])
             except Exception:
                 return False
 
@@ -108,5 +105,11 @@ class GmailLogin:
         except Exception:
             # It's fine, we'll assume that the login worked nicely
             pass
+
+        if self.uses_2FA:
+            # In this case, wait for the user to authenticate manually before resuming automation again
+            await self.page.wait_for_url(
+                self.final_2FA_url
+            )  # Waiting for the page to contain 'mail.google.com'
 
         return True

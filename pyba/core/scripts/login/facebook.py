@@ -22,7 +22,7 @@ class FacebookLogin:
             page  # This is the page we're at, this is where the login automation needs to happen
         )
 
-        self.engine_name = "instagram"
+        self.engine_name = "facebook"
         self.username = os.getenv("facebook_username")
         self.password = os.getenv("facebook_password")
 
@@ -70,11 +70,11 @@ class FacebookLogin:
 
         # Now run the script
         try:
-            await self.page.wait_for_selector('input[name="email"]')
-            await self.page.fill('input[name="email"]', self.username)
-            await self.page.fill('input[name="pass"]', self.password)
+            await self.page.wait_for_selector(config["username_selector"])
+            await self.page.fill(config["username_selector"], self.username)
+            await self.page.fill(config["password_selector"], self.password)
 
-            await self.page.click('button[type="submit"]')
+            await self.page.click(config["submit_selector"])
         except Exception:
             # Now this is bad
             return False

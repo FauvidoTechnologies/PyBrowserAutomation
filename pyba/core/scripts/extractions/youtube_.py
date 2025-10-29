@@ -44,6 +44,5 @@ class YouTubeDOMExtraction:
         return videos
 
     async def extract(self):
-        print("inside extract")
         videos = await self.extract_links_and_titles()
         return videos
