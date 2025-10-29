@@ -2,7 +2,7 @@ import asyncio
 import sys
 import uuid
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
@@ -202,7 +202,21 @@ class Engine:
 
                 if action is None or all(value is None for value in vars(action).values()):
                     self.log.success("Automation completed, agent has returned None")
-                    await self.shut_down()
+
+                    try:
+                        output = self.playwright_agent.get_output(
+                            cleaned_dom=cleaned_dom, user_prompt=prompt
+                        )
+                        self.log.info(f"This is the output given by the model: {output}")
+                        return output
+                    except Exception:
+                        # Usually a resource exhausted error
+                        await asyncio.sleep(10)
+                        output = self.playwright_agent.get_output(
+                            cleaned_dom=cleaned_dom, user_prompt=prompt
+                        )
+                        self.log.info(f"This is the output given by the model: {output}")
+                        return output
 
                 self.log.action(action)
                 # If its not None, then perform it
@@ -249,6 +263,7 @@ class Engine:
                 cleaned_dom["current_url"] = base_url
 
         await self.shut_down()
+        sys.exit(0)
 
     async def shut_down(self):
         """
@@ -262,10 +277,14 @@ class Engine:
 
         await self.context.close()
         await self.browser.close()
-        sys.exit(0)
 
-    def sync_run(self, prompt: str = None, automated_login_sites: List[str] = None):
+    def sync_run(
+        self, prompt: str = None, automated_login_sites: List[str] = None
+    ) -> Union[str, None]:
         """
         Sync endpoint for running the above function
         """
-        asyncio.run(self.run(prompt=prompt, automated_login_sites=automated_login_sites))
+        output = asyncio.run(self.run(prompt=prompt, automated_login_sites=automated_login_sites))
+
+        if output:
+            return output

@@ -58,3 +58,11 @@ class PlaywrightAction(BaseModel):
 
 class PlaywrightResponse(BaseModel):
     actions: List[PlaywrightAction]
+
+
+class OutputResponseFormat(BaseModel):
+    """
+    Output type for the model for direct response
+    """
+
+    output: str

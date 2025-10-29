@@ -7,8 +7,13 @@ from google.genai.types import GenerateContentConfig
 from openai import OpenAI
 
 from pyba.utils.load_yaml import load_config
-from pyba.utils.prompts import system_instruction, general_prompt
-from pyba.utils.structure import PlaywrightResponse
+from pyba.utils.prompts import (
+    system_instruction,
+    general_prompt,
+    output_system_instruction,
+    output_prompt,
+)
+from pyba.utils.structure import PlaywrightResponse, OutputResponseFormat
 
 config = load_config("general")
 
@@ -44,8 +49,10 @@ class PlaywrightAgent:
             self.agent = {
                 "client": self.openai_client,
                 "system_instruction": system_instruction,
+                "output_system_instruction": output_system_instruction,
                 "model": config["main_engine_configs"]["openai"]["model"],
                 "response_format": PlaywrightResponse,
+                "output_response_format": OutputResponseFormat,
             }
         else:
             self.vertexai_client = genai.Client(
@@ -60,6 +67,16 @@ class PlaywrightAgent:
                     temperature=0,
                     system_instruction=system_instruction,
                     response_schema=PlaywrightResponse,
+                    response_mime_type="application/json",
+                ),
+            )
+
+            self.output_agent = self.vertexai_client.chats.create(
+                model=self.engine.model,
+                config=GenerateContentConfig(
+                    temperature=0,
+                    system_instruction=output_system_instruction,
+                    response_schema=OutputResponseFormat,
                     response_mime_type="application/json",
                 ),
             )
@@ -110,5 +127,45 @@ class PlaywrightAgent:
                 if actions and hasattr(actions, "actions") and actions.actions:
                     return actions.actions[0]
                 raise IndexError("No actions found in response.")
+            except Exception as e:
+                print(f"Unable to parse the output from VertexAI response: {e}")
+
+    def get_output(self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str) -> str:
+        """
+        Method to get the final output from the model if the user requested for one
+        """
+        print("inside")
+        cleaned_dom["user_prompt"] = user_prompt
+
+        # Passing only the hyperlinks, actual text and user_prompt inside the prompt
+        prompt = output_prompt.format(**cleaned_dom)
+
+        if self.engine.provider == "openai":
+            messages = [
+                {"role": "system", "content": self.agent["output_system_instruction"]},
+                {"role": "user", "content": prompt},
+            ]
+
+            kwargs = {
+                "model": self.agent["model"],
+                "messages": messages,
+            }
+
+            response = self.agent["client"].chat.completions.parse(
+                **kwargs, response_format=self.agent["output_response_format"]
+            )
+
+            return str(json.loads(response.choices[0].message.content).get("output"))
+        else:
+            response = self.output_agent.send_message(prompt)
+            print(f"This is the actual response: {response}")
+            try:
+                output = getattr(response, "output_parsed", getattr(response, "parsed", None))
+
+                if output and hasattr(output, "output") and output.output:
+                    return output.output
+
+                raise IndexError("No output found in the response!")
+
             except Exception as e:
                 print(f"Unable to parse the output from VertexAI response: {e}")
