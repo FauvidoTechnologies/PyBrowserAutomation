@@ -1,2 +1,2 @@
 task:
-	"Open Gmail, click Compose, and draft an email to abc@example.com with subject ‘Test’ and message ‘This is a test email.’"
+	"Open Hacker News and extract all post titles on the front page."

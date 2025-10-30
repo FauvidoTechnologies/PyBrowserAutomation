@@ -1,0 +1,10 @@
+[INFO]    This is the output given by the model: 1. Amazon Echo Buds (newest model), True Wireless Bluetooth 5.2 Earbuds: Price not listed
+2. Amazon Echo Buds with Active Noise Cancellation (newest model): Price not listed
+3. Wireless Earbuds Bluetooth 5.3 Ear Buds: $123.88
+4. Wireless Earbuds, Sports Bluetooth Headphones, 75Hrs Playtime: $199.99
+5. Wireless Earbuds, Sports Bluetooth Headphones, 80Hrs Playtime (Rose Gold): $168.29
+6. Wireless Earbuds, Bluetooth 5.4 Headphones In Ear with Noise Cancelling Mic: Price not listed
+7. Jxrev Wireless Earbuds, Bluetooth 5.4 Headphones in Ear with Noise Cancelling Mic: Price not listed
+8. kurdene Wireless Earbuds Bluetooth Headphones Sport: Price not listed
+9. Wireless Earbuds, Bluetooth 5.4 Headphones Bass Stereo: $21.99
+10. Soundcore V20i by Anker Open-Ear Headphones: Price not listed

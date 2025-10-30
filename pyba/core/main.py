@@ -202,7 +202,8 @@ class Engine:
 
                 if action is None or all(value is None for value in vars(action).values()):
                     self.log.success("Automation completed, agent has returned None")
-
+                    await self.save_trace()
+                    await self.shut_down()
                     try:
                         output = self.playwright_agent.get_output(
                             cleaned_dom=cleaned_dom, user_prompt=prompt
@@ -262,19 +263,24 @@ class Engine:
 
                 cleaned_dom["current_url"] = base_url
 
+        await self.save_trace()
         await self.shut_down()
         sys.exit(0)
 
-    async def shut_down(self):
+    async def save_trace(self):
         """
-        Function to cleanly close the existing browsers and contexts. This also saves
-        the traces in the provided trace_dir by the user or the default.
+        Endpoint to save the trace if required
         """
         if self.tracing:
             trace_path = self.trace_dir / f"{self.session_id}_trace.zip"
             self.log.info(f"This is the tracepath: {trace_path}")
             await self.context.tracing.stop(path=str(trace_path))
 
+    async def shut_down(self):
+        """
+        Function to cleanly close the existing browsers and contexts. This also saves
+        the traces in the provided trace_dir by the user or the default.
+        """
         await self.context.close()
         await self.browser.close()
 
