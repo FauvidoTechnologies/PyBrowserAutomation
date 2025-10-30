@@ -15,7 +15,7 @@ main_engine_configs:
     screenshots: False # Capture screenshots
     snapshots: False   # Capture DOM snapshots
     sources: False     # Capture JS sources
-    record_har_content: "omit"    # can also be omit if you don't want to include requests and responses
+    record_har_content: "omit"    # can also be embed|attack if you want to include requests and responses
 
   # Default values for the LLMs
   vertexai:

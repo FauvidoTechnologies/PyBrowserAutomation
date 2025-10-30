@@ -1,6 +1,5 @@
 import asyncio
 import uuid
-from pathlib import Path
 from typing import List, Union
 
 from playwright.async_api import async_playwright
@@ -9,14 +8,11 @@ from playwright_stealth import Stealth
 from pyba.core.agent.playwright_agent import PlaywrightAgent
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
+from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
+from pyba.core.tracing import Tracing
 from pyba.logger import get_logger
-from pyba.utils.exceptions import (
-    PromptNotPresent,
-    ServiceNotSelected,
-    ServerLocationUndefined,
-    UnknownSiteChosen,
-)
+from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen
 from pyba.utils.load_yaml import load_config
 
 config = load_config("general")
@@ -51,16 +47,13 @@ class Engine:
 
         Find these default values at `pyba/config.yaml`
         """
-        self.provider = None
         self.session_id = uuid.uuid4().hex
         self.headless_mode = headless
-        self.use_logger = use_logger
-
-        # Initialising the loggering depending on whether the use_logger boolean is on
-        self.log = get_logger(use_logger=self.use_logger)
-
         self.tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
+
+        # Initialising the loggering depending on whether the use_logger boolean is on
+        self.log = get_logger(use_logger=use_logger)
 
         self.automated_login_engine_classes = []
 
@@ -68,37 +61,26 @@ class Engine:
         self.combined_selector = ", ".join(selectors)
 
         self.handle_dependencies(handle_dependencies)
-        self.handle_keys(openai_api_key, vertexai_project_id, vertexai_server_location)
+
+        provider_instance = Provider(
+            openai_api_key=openai_api_key,
+            vertexai_project_id=vertexai_project_id,
+            vertexai_server_location=vertexai_server_location,
+            logger=self.log,
+        )
+
+        self.provider = provider_instance.provider
+        self.model = provider_instance.model
+        self.openai_api_key = provider_instance.openai_api_key
+        self.vertexai_project_id = provider_instance.vertexai_project_id
+        self.location = provider_instance.location
+
         # Defining the playwright agent with the defined configs
         self.playwright_agent = PlaywrightAgent(engine=self)  # This is amusing
 
     def handle_dependencies(self, handle_dependencies: bool):
         if handle_dependencies:
             HandleDependencies.playwright.handle_dependencies()
-
-    def handle_keys(self, openai_api_key, vertexai_project_id, vertexai_server_location):
-        if openai_api_key is None and vertexai_project_id is None:
-            raise ServiceNotSelected()
-
-        if vertexai_project_id and vertexai_server_location is None:
-            raise ServerLocationUndefined(vertexai_server_location)
-
-        if openai_api_key and vertexai_project_id:
-            self.log.warning(
-                "You've defined both vertexai and openai models, we're choosing to go with openai!"
-            )
-            self.openai_api_key = openai_api_key
-            self.provider = config["main_engine_configs"]["openai"]["provider"]
-
-        if vertexai_project_id:
-            # Assuming that we don't have an openai_api_key
-            self.provider = config["main_engine_configs"]["vertexai"]["provider"]
-            self.vertexai_project_id = vertexai_project_id
-            self.location = vertexai_server_location
-            self.model = config["main_engine_configs"]["vertexai"]["model"]
-        else:
-            self.provider = config["main_engine_configs"]["openai"]["provider"]
-            self.openai_api_key = openai_api_key
 
     async def run(self, prompt: str = None, automated_login_sites: List[str] = None):
         """
@@ -129,36 +111,14 @@ class Engine:
         async with Stealth().use_async(async_playwright()) as p:
             self.browser = await p.chromium.launch(headless=self.headless_mode)
 
-            # Start tracing if enabled
-            if self.tracing:
-                # First create the directory for saving
-                if self.trace_save_directory is None:
-                    # This means we revert to default
-                    trace_save_directory = config["main_engine_configs"]["trace_save_directory"]
-                else:
-                    trace_save_directory = self.trace_save_directory
+            tracing = Tracing(
+                browser_instance=self.browser,
+                session_id=self.session_id,
+                enable_tracing=self.tracing,
+                trace_save_directory=self.trace_save_directory,
+            )
 
-                self.trace_dir = Path(trace_save_directory)
-                self.trace_dir.mkdir(parents=True, exist_ok=True)
-                har_file_path = self.trace_dir / f"{self.session_id}_network.har"
-
-                self.context = await self.browser.new_context(
-                    record_har_path=har_file_path,  # HAR file output
-                    record_har_content=config["main_engine_configs"]["tracing"][
-                        "record_har_content"
-                    ],  # include request/response bodies
-                )
-
-                await self.context.tracing.start(
-                    # By default, all of them are False
-                    screenshots=config["main_engine_configs"]["tracing"]["screenshots"],
-                    snapshots=config["main_engine_configs"]["tracing"]["snapshots"],
-                    sources=config["main_engine_configs"]["tracing"]["sources"],
-                )
-            else:
-                # Normal context without tracing enabled
-                self.context = await self.browser.new_context()
-
+            self.context = await tracing.initialize_context()
             self.page = await self.context.new_page()
 
             await self.page.goto("https://search.brave.com")

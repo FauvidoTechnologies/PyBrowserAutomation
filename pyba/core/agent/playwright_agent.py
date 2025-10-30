@@ -98,7 +98,7 @@ class PlaywrightAgent:
             response = agent["client"].chat.completions.parse(
                 **arguments, response_format=agent["response_format"]
             )
-            
+
             parsed_json = json.loads(response.choices[0].message.content)
 
             # Parse based on agent type
@@ -110,7 +110,9 @@ class PlaywrightAgent:
         else:  # VertexAI logic
             response = agent.send_message(prompt)
             try:
-                parsed_object = getattr(response, "output_parsed", getattr(response, "parsed", None))
+                parsed_object = getattr(
+                    response, "output_parsed", getattr(response, "parsed", None)
+                )
 
                 if not parsed_object:
                     print("No parsed object found in VertexAI response.")
