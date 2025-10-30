@@ -16,6 +16,9 @@ class Tracing:
         session_id: str,
         enable_tracing: bool = False,
         trace_save_directory: str = None,
+        screenshots: bool = False,
+        snapshots: bool = False,
+        sources: bool = False,
     ):
         """
         Args:
@@ -31,24 +34,37 @@ class Tracing:
         self.enable_tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
 
+        self.screenshots: bool = config["tracing"]["screenshots"] | screenshots
+        self.snapshots: bool = config["tracing"]["snapshots"] | snapshots
+        self.sources: bool = config["tracing"]["sources"] | sources
+
+        if self.trace_save_directory is None:
+            # This means we revert to default
+            trace_save_directory = config["trace_save_directory"]
+        else:
+            trace_save_directory = self.trace_save_directory
+
+        self.trace_dir = Path(trace_save_directory)
+        self.trace_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.har_file_path = self.trace_dir / f"{self.session_id}_network.har"
+
+
     async def initialize_context(self):
         if self.enable_tracing:
-            if self.trace_save_directory is None:
-                # This means we revert to default
-                trace_save_directory = config["trace_save_directory"]
-            else:
-                trace_save_directory = self.trace_save_directory
-
-            self.trace_dir = Path(trace_save_directory)
-            self.trace_dir.mkdir(parents=True, exist_ok=True)
-            har_file_path = self.trace_dir / f"{self.session_id}_network.har"
-
             context = await self.browser.new_context(
-                record_har_path=har_file_path,  # HAR file output
+                record_har_path=self.har_file_path,  # HAR file output
                 record_har_content=config["tracing"][
                     "record_har_content"
                 ],  # include request/response bodies
             )
+
+            await context.tracing.start(
+                screenshots=self.screenshots,
+                snapshots=self.snapshots,
+                sources=self.sources,
+            )
+
         else:
             context = await self.browser.new_context()
 

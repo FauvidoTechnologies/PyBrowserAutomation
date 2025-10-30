@@ -117,6 +117,7 @@ class Engine:
                 enable_tracing=self.tracing,
                 trace_save_directory=self.trace_save_directory,
             )
+            self.trace_dir = tracing.trace_dir
 
             self.context = await tracing.initialize_context()
             self.page = await self.context.new_page()
