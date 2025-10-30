@@ -134,7 +134,6 @@ class PlaywrightAgent:
         """
         Method to get the final output from the model if the user requested for one
         """
-        print("inside")
         cleaned_dom["user_prompt"] = user_prompt
 
         # Passing only the hyperlinks, actual text and user_prompt inside the prompt
@@ -158,7 +157,6 @@ class PlaywrightAgent:
             return str(json.loads(response.choices[0].message.content).get("output"))
         else:
             response = self.output_agent.send_message(prompt)
-            print(f"This is the actual response: {response}")
             try:
                 output = getattr(response, "output_parsed", getattr(response, "parsed", None))
 
