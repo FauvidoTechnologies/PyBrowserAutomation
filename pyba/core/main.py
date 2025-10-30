@@ -1,5 +1,4 @@
 import asyncio
-import sys
 import uuid
 from pathlib import Path
 from typing import List, Union
@@ -129,7 +128,6 @@ class Engine:
 
         async with Stealth().use_async(async_playwright()) as p:
             self.browser = await p.chromium.launch(headless=self.headless_mode)
-
 
             # Start tracing if enabled
             if self.tracing:
@@ -268,7 +266,6 @@ class Engine:
 
         await self.save_trace()
         await self.shut_down()
-        sys.exit(0)
 
     async def save_trace(self):
         """
