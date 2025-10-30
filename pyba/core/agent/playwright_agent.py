@@ -2,84 +2,76 @@ import json
 from types import SimpleNamespace
 from typing import Dict, List, Union
 
-from google import genai
-from google.genai.types import GenerateContentConfig
-from openai import OpenAI
-
-from pyba.utils.load_yaml import load_config
-from pyba.utils.prompts import (
-    system_instruction,
-    general_prompt,
-    output_system_instruction,
-    output_prompt,
-)
-from pyba.utils.structure import PlaywrightResponse, OutputResponseFormat
-
-config = load_config("general")
+from pyba.core.agent.llm_factory import LLMFactory
+from pyba.utils.prompts import general_prompt, output_prompt
+from pyba.utils.structure import PlaywrightResponse
 
 
 class PlaywrightAgent:
     """
-    The automation main engine. This takes in all the context from
-    the current screen and decides the next best action. We're
-    supporting two APIs for now:
+    Defines the playwright agent's actions
 
-    1. VertexAI projects
-    2. OpenAI
-
-    Depending on which key you have set in the main engine, this agent
-    will be called. This configuration is taken directly from the engine.
-    We're not making this an inherited class of Engine because this is
-    technically not an Engine per se, its is own thing.
+    Provides two endpoints:
+        - `process_action`: for returning the right action on a page
+        - `get_output`: for summarizing the chat and returning a string
     """
 
     def __init__(self, engine) -> None:
         """
-        `engine` basically holds all the arguments from the
+        Args:
+            `engine`: holds all the arguments from the user
+
+        Initialises the agents using the `.get_agent()` entrypoint from the LLMFactory
         """
         self.engine = engine
-        self.initialize_playwright_agent()
+        self.llm_factory = LLMFactory(engine=self.engine)
 
-    def initialize_playwright_agent(self) -> None:
+        self.action_agent, self.output_agent = self.llm_factory.get_agent()
+
+    def _initialise_prompt(
+        self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str, main_instruction: str
+    ):
         """
-        Initialises a client/agent depending on the provider
+        Method to initailise the main instruction for any agent
+
+        Args:
+            `cleaned_dom`: A dictionary containing nicely formatted DOM elements
+            `user_prompt`: The instructions given by the user
+            `main_instruction`: The prompt for the playwright agent
         """
-        if self.engine.provider == "openai":
-            self.openai_client = OpenAI(api_key=self.engine.openai_api_key)
-            self.agent = {
-                "client": self.openai_client,
-                "system_instruction": system_instruction,
-                "output_system_instruction": output_system_instruction,
-                "model": config["main_engine_configs"]["openai"]["model"],
-                "response_format": PlaywrightResponse,
-                "output_response_format": OutputResponseFormat,
-            }
-        else:
-            self.vertexai_client = genai.Client(
-                vertexai=True,
-                project=self.engine.vertexai_project_id,
-                location=self.engine.location,
-            )
 
-            self.agent = self.vertexai_client.chats.create(
-                model=self.engine.model,
-                config=GenerateContentConfig(
-                    temperature=0,
-                    system_instruction=system_instruction,
-                    response_schema=PlaywrightResponse,
-                    response_mime_type="application/json",
-                ),
-            )
+        # Adding the user_prompt to the DOM to make it easier to format the prompt
+        cleaned_dom["user_prompt"] = user_prompt
+        prompt = main_instruction.format(**cleaned_dom)
 
-            self.output_agent = self.vertexai_client.chats.create(
-                model=self.engine.model,
-                config=GenerateContentConfig(
-                    temperature=0,
-                    system_instruction=output_system_instruction,
-                    response_schema=OutputResponseFormat,
-                    response_mime_type="application/json",
-                ),
-            )
+        return prompt
+
+    def _initialise_openai_arguments(
+        self, system_instruction: str, prompt: str, model_name: str
+    ) -> Dict[str, List[Dict[str, str]]]:
+        """
+        Initialises the arguments for OpenAI agents
+
+        Args:
+            `system_instruction`: The system instruction for the agent
+            `prompt`: The current prompt for the agent
+            `model_name`: The OpenAI model name
+
+        Returns:
+            An arguments dictionary which can be directly passed to OpenAI agents
+        """
+
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": prompt},
+        ]
+
+        kwargs = {
+            "model": model_name,
+            "messages": messages,
+        }
+
+        return kwargs
 
     def process_action(
         self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str
@@ -100,27 +92,27 @@ class PlaywrightAgent:
 
             output: A predefined pydantic model
         """
-        cleaned_dom["user_prompt"] = user_prompt
-        prompt = general_prompt.format(**cleaned_dom)
+        prompt = self._initialise_prompt(
+            cleaned_dom=cleaned_dom, user_prompt=user_prompt, main_instruction=general_prompt
+        )
 
         if self.engine.provider == "openai":
-            messages = [
-                {"role": "system", "content": self.agent["system_instruction"]},
-                {"role": "user", "content": prompt},
-            ]
-            kwargs = {
-                "model": self.agent["model"],
-                "messages": messages,
-            }
-            # This is when we are passing a response scehma to the model. We use the .parse() endpoint
-            response = self.agent["client"].chat.completions.parse(
-                **kwargs, response_format=self.agent["response_format"]
+            arguments = self._initialise_openai_arguments(
+                system_instruction=self.action_agent["system_instruction"],
+                prompt=prompt,
+                model_name=self.action_agent["model"],
+            )
+
+            # Using the .parse() endpoint for the `response_format`
+            response = self.action_agent["client"].chat.completions.parse(
+                **arguments, response_format=self.action_agent["response_format"]
             )
             return SimpleNamespace(
                 **json.loads(response.choices[0].message.content).get("actions")[0]
             )
         else:
-            response = self.agent.send_message(prompt)
+            # In VertexAI, the `send_message` endpoint does not require any additional configurations
+            response = self.action_agent.send_message(prompt)
             try:
                 # We should prefer .output_parsed if using google-genai structured output
                 actions = getattr(response, "output_parsed", getattr(response, "parsed", None))
@@ -134,24 +126,20 @@ class PlaywrightAgent:
         """
         Method to get the final output from the model if the user requested for one
         """
-        cleaned_dom["user_prompt"] = user_prompt
 
-        # Passing only the hyperlinks, actual text and user_prompt inside the prompt
-        prompt = output_prompt.format(**cleaned_dom)
+        prompt = self._initialise_prompt(
+            cleaned_dom=cleaned_dom, user_prompt=user_prompt, main_instruction=output_prompt
+        )
 
         if self.engine.provider == "openai":
-            messages = [
-                {"role": "system", "content": self.agent["output_system_instruction"]},
-                {"role": "user", "content": prompt},
-            ]
+            arguments = self._initialise_openai_arguments(
+                system_instruction=self.output_agent["system_instruction"],
+                prompt=prompt,
+                model_name=self.output_agent["model"],
+            )
 
-            kwargs = {
-                "model": self.agent["model"],
-                "messages": messages,
-            }
-
-            response = self.agent["client"].chat.completions.parse(
-                **kwargs, response_format=self.agent["output_response_format"]
+            response = self.output_agent["client"].chat.completions.parse(
+                **arguments, response_format=self.output_agent["output_response_format"]
             )
 
             return str(json.loads(response.choices[0].message.content).get("output"))
@@ -163,7 +151,7 @@ class PlaywrightAgent:
                 if output and hasattr(output, "output") and output.output:
                     return output.output
 
-                raise IndexError("No output found in the response!")
+                print("No output found in the response!")
 
             except Exception as e:
                 print(f"Unable to parse the output from VertexAI response: {e}")

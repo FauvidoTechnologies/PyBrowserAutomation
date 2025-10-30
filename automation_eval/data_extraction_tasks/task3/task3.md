@@ -1,0 +1,2 @@
+task:
+	"Head over to https://formsmarts.com/html-form-example, and fill the form with name as Alice Johnson, email alice@demo.com and check the support-inquiry box and write a random inquiry with heated comments. Take a screenshot and extract the page title and click submit"
