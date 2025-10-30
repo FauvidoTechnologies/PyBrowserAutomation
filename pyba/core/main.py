@@ -130,6 +130,7 @@ class Engine:
         async with Stealth().use_async(async_playwright()) as p:
             self.browser = await p.chromium.launch(headless=self.headless_mode)
 
+
             # Start tracing if enabled
             if self.tracing:
                 # First create the directory for saving
@@ -162,12 +163,14 @@ class Engine:
 
             self.page = await self.context.new_page()
 
+            await self.page.goto("https://search.brave.com")
+
             cleaned_dom = {
                 "hyperlinks": None,
-                "input_fields": None,
+                "input_fields": ["#searchbox"],
                 "clickable_fields": None,
                 "actual_text": None,
-                "current_url": None,
+                "current_url": "https://search.brave.com",
             }
 
             for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
