@@ -1,6 +1,6 @@
 import json
 from types import SimpleNamespace
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.utils.prompts import general_prompt, output_prompt
@@ -73,6 +73,62 @@ class PlaywrightAgent:
 
         return kwargs
 
+    def _call_model(self, agent: Any, prompt: str, agent_type: str) -> Any:
+        """
+        Generic method to call the correct LLM provider and parse the response.
+
+        Args:
+            agent: The agent to use (action_agent or output_agent)
+            prompt: The fully formatted prompt string
+            agent_type: "action" or "output", to determine parsing logic
+
+        Returns:
+            The parsed response (SimpleNamespace for action, str for output)
+        """
+        if self.engine.provider == "openai":
+            arguments = self._initialise_openai_arguments(
+                system_instruction=agent["system_instruction"],
+                prompt=prompt,
+                model_name=agent["model"],
+            )
+
+            # Call the OpenAI API
+            # NOTE: This fixes a bug. The key is "response_format",
+            # not "output_response_format".
+            response = agent["client"].chat.completions.parse(
+                **arguments, response_format=agent["response_format"]
+            )
+            
+            parsed_json = json.loads(response.choices[0].message.content)
+
+            # Parse based on agent type
+            if agent_type == "action":
+                return SimpleNamespace(**parsed_json.get("actions")[0])
+            elif agent_type == "output":
+                return str(parsed_json.get("output"))
+
+        else:  # VertexAI logic
+            response = agent.send_message(prompt)
+            try:
+                parsed_object = getattr(response, "output_parsed", getattr(response, "parsed", None))
+
+                if not parsed_object:
+                    print("No parsed object found in VertexAI response.")
+                    return None
+
+                # Parse based on agent type
+                if agent_type == "action":
+                    if hasattr(parsed_object, "actions") and parsed_object.actions:
+                        return parsed_object.actions[0]
+                    raise IndexError("No 'actions' found in VertexAI response.")
+                elif agent_type == "output":
+                    if hasattr(parsed_object, "output") and parsed_object.output:
+                        return str(parsed_object.output)
+                    raise IndexError("No 'output' found in VertexAI response.")
+
+            except Exception as e:
+                print(f"Unable to parse the output from VertexAI response: {e}")
+
     def process_action(
         self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str
     ) -> PlaywrightResponse:
@@ -96,31 +152,7 @@ class PlaywrightAgent:
             cleaned_dom=cleaned_dom, user_prompt=user_prompt, main_instruction=general_prompt
         )
 
-        if self.engine.provider == "openai":
-            arguments = self._initialise_openai_arguments(
-                system_instruction=self.action_agent["system_instruction"],
-                prompt=prompt,
-                model_name=self.action_agent["model"],
-            )
-
-            # Using the .parse() endpoint for the `response_format`
-            response = self.action_agent["client"].chat.completions.parse(
-                **arguments, response_format=self.action_agent["response_format"]
-            )
-            return SimpleNamespace(
-                **json.loads(response.choices[0].message.content).get("actions")[0]
-            )
-        else:
-            # In VertexAI, the `send_message` endpoint does not require any additional configurations
-            response = self.action_agent.send_message(prompt)
-            try:
-                # We should prefer .output_parsed if using google-genai structured output
-                actions = getattr(response, "output_parsed", getattr(response, "parsed", None))
-                if actions and hasattr(actions, "actions") and actions.actions:
-                    return actions.actions[0]
-                raise IndexError("No actions found in response.")
-            except Exception as e:
-                print(f"Unable to parse the output from VertexAI response: {e}")
+        return self._call_model(agent=self.action_agent, prompt=prompt, agent_type="action")
 
     def get_output(self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str) -> str:
         """
@@ -131,27 +163,4 @@ class PlaywrightAgent:
             cleaned_dom=cleaned_dom, user_prompt=user_prompt, main_instruction=output_prompt
         )
 
-        if self.engine.provider == "openai":
-            arguments = self._initialise_openai_arguments(
-                system_instruction=self.output_agent["system_instruction"],
-                prompt=prompt,
-                model_name=self.output_agent["model"],
-            )
-
-            response = self.output_agent["client"].chat.completions.parse(
-                **arguments, response_format=self.output_agent["output_response_format"]
-            )
-
-            return str(json.loads(response.choices[0].message.content).get("output"))
-        else:
-            response = self.output_agent.send_message(prompt)
-            try:
-                output = getattr(response, "output_parsed", getattr(response, "parsed", None))
-
-                if output and hasattr(output, "output") and output.output:
-                    return output.output
-
-                print("No output found in the response!")
-
-            except Exception as e:
-                print(f"Unable to parse the output from VertexAI response: {e}")
+        return self._call_model(agent=self.output_agent, prompt=prompt, agent_type="output")

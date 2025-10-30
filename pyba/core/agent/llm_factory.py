@@ -109,7 +109,7 @@ class LLMFactory:
                 system_instruction=system_instruction, response_schema=PlaywrightResponse
             )
             output_agent = self._initialize_openai_agent(
-                system_instruction=system_instruction, response_schema=PlaywrightResponse
+                system_instruction=output_system_instruction, response_schema=OutputResponseFormat
             )
         else:
             action_agent = self._initialize_vertexai_agent(
