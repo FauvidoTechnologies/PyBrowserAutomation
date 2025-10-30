@@ -46,9 +46,8 @@ class Tracing:
 
         self.trace_dir = Path(trace_save_directory)
         self.trace_dir.mkdir(parents=True, exist_ok=True)
-        
-        self.har_file_path = self.trace_dir / f"{self.session_id}_network.har"
 
+        self.har_file_path = self.trace_dir / f"{self.session_id}_network.har"
 
     async def initialize_context(self):
         if self.enable_tracing:
