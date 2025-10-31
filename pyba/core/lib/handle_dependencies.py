@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 
 class PlaywrightDependencies:
@@ -11,11 +12,39 @@ class PlaywrightDependencies:
     """
 
     @staticmethod
-    def check_playwright_browsers_installed() -> bool:
+    def _get_playwright_browsers_path() -> Path:
         """
-        Checking if playwright browsers are installed by pipeing the output of a dry-run
-        and verifying certain regex matches along with checking the cache directory where
-        we expect the browsers to be.
+        Determines the default or configured path where Playwright browsers are
+        installed. An OS agnostic check for determining installed playwright browsers.
+
+        Uses the following paths:
+            `windows`: "AppData/Local/ms-playwright"
+            `macOS`: "~/Library/Caches/ms-playwright"
+            `linux`: ".cache/ms-playwright"
+
+        Note: OSes like freebsd haven't been checked
+        """
+        env_path = os.environ.get("PLAYWRIGHT_BROWSERS_PATH")
+        if env_path:
+            return Path(env_path).expanduser().resolve()
+
+        if os.name == "nt":
+            base = (
+                Path(os.environ.get("LOCALAPPDATA", Path.home() / "AppData" / "Local"))
+                / "ms-playwright"
+            )
+        elif sys.platform == "darwin":
+            base = Path.home() / "Library" / "Caches" / "ms-playwright"
+        else:
+            # This is buggy
+            base = Path.home() / ".cache" / "ms-playwright"
+        return base
+
+    @staticmethod
+    def _get_expected_browser_dirs() -> list[str]:
+        """
+        Runs 'playwright install --dry-run --json' to determine which browser
+        directories should exist, based on the current Playwright version.
         """
         try:
             result = subprocess.run(
@@ -25,37 +54,37 @@ class PlaywrightDependencies:
                 check=False,
             )
 
-            stdout = result.stdout.lower()
+            if result.returncode != 0 or not result.stdout.strip():
+                return []
 
-            # Looking for `downloading` text
-            if re.search(r"install location:", stdout) and not re.search(
-                r"(installing|downloading)", stdout
-            ):
-                return True
+            data = result.stdout
+            matches = re.findall(r"Install location:\s+(.+)", data)
+            expected_dirs = [Path(path.strip()).name for path in matches if path.strip()]
+            return expected_dirs
+        except Exception as e:
+            print(f"Error determining expected browser directories: {e}")
+            return []
 
-            # We can just check the cache directory as well (hopefully this is not a violation of anything...)
-            cache_dir = os.path.expanduser("~/.cache/ms-playwright")
-            expected_dirs = [
-                "chromium-",
-                "chromium_headless_shell-",
-                "firefox-",
-                "webkit-",
-                "ffmpeg-",
-            ]
+    @staticmethod
+    def check_playwright_browsers_installed() -> bool:
+        """
+        Checks if all expected Playwright browsers are installed in the cache directory.
+        """
+        try:
+            base_path = PlaywrightDependencies._get_playwright_browsers_path()
+            expected_dirs = PlaywrightDependencies._get_expected_browser_dirs()
 
-            # Checking if each expected browser has at least one matching folder
-            installed = (
-                all(
-                    any(name.startswith(prefix) for name in os.listdir(cache_dir))
-                    for prefix in expected_dirs
-                )
-                if os.path.exists(cache_dir)
-                else False
-            )
+            if not expected_dirs:
+                return False
 
-            return installed
+            # Get the names of existing directories inside the Playwright cache path
+            existing_dirs = {p.name for p in base_path.glob("*") if p.is_dir()}
+            missing_dirs = [name for name in expected_dirs if name not in existing_dirs]
 
-        except Exception:
+            return len(missing_dirs) == 0
+
+        except Exception as e:
+            print(f"An unexpected error occurred during browser check: {e}", file=sys.stderr)
             return False
 
     @staticmethod
@@ -96,6 +125,8 @@ class PlaywrightDependencies:
                 print("All playwright dependencies present")
         except FileNotFoundError:
             print("Could not run playwright. Is it installed in this environment?")
+        except Exception as e:
+            print(f"An error occurred during dependency check: {e}")
 
     @staticmethod
     def handle_dependencies():
@@ -106,7 +137,11 @@ class PlaywrightDependencies:
             print("Playwright browsers not found.")
             choice = input("Do you want to install them automatically? (y/n): ").strip().lower()
             if choice == "y":
-                PlaywrightDependencies.install_playwright_browsers()
+                try:
+                    PlaywrightDependencies.install_playwright_browsers()
+                    print("Installation complete.")
+                except subprocess.CalledProcessError:
+                    print("Browser installation failed. Check the output above for errors.")
             else:
                 print("Please install browsers using: playwright install")
         # Step 2: Check missing system dependencies
