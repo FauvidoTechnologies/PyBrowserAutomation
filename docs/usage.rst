@@ -183,3 +183,22 @@ Specify which sites you want to login to in the ``.run()`` argument
       headless=False,
    )
    agent.run("Go to instagram and like all posts by mrbeast", automated_login_sites=["instagram"])
+
+.. _database:
+
+Database-logging
+^^^^^^^^^^^^^^^^
+
+The library supports three types of databases:
+
+* MySQL (server-client)
+* PostgreSQL (server-client)
+* SQLite (file based system)
+
+Set the data configurations using the ``Database`` class from pyba
+
+.. code-block:: python
+
+   from pyba import Engine, Database
+
+Set the 
