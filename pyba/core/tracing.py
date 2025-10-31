@@ -39,8 +39,8 @@ class Tracing:
         self.sources: bool = config["tracing"]["sources"] | sources
 
         if self.trace_save_directory is None:
-            # This means we revert to default
-            trace_save_directory = config["trace_save_directory"]
+            # This means we revert to default, which is CWD
+            trace_save_directory = str(Path.cwd())
         else:
             trace_save_directory = self.trace_save_directory
 
