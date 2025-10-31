@@ -3,6 +3,9 @@ from typing import Literal
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from pyba.database.mysql import MySQLHandler
+from pyba.database.postgres import PostgresHandler
+from pyba.database.sqlite import SQLiteHandler
 from pyba.utils.load_yaml import load_config
 
 config = load_config("general")["database"]
@@ -53,7 +56,7 @@ class Database:
 
         > This engine is the recommended way to define the database structure
         """
-        engine: str = engine or config["engine"]
+        self.engine: str = engine or config["engine"]
 
         self.name: str = name or config["name"]
         self.host: str = host or config["host"]
@@ -62,10 +65,12 @@ class Database:
         self.password: str = password or config["password"]
         self.ssl_mode: str = ssl_mode or config["ssl_mode"]
 
-        self.database_connection_string = self.create_database(engine_name=engine)
-        self.session = self.create_connection(engine_name=engine)
+        self.database_connection_string = self.build_connection_string(engine_name=self.engine)
+        self.session = self.create_connection(engine_name=self.engine)
 
-    def create_database(self, engine_name: Literal["sqlite", "postgres", "mysql"]) -> str:
+        self.initialise_tables_and_database()
+
+    def build_connection_string(self, engine_name: Literal["sqlite", "postgres", "mysql"]) -> str:
         """
         Defines connection URLs for the different databases for SQLAlchemy usage
 
@@ -109,8 +114,24 @@ class Database:
 
             return Session()
         except Exception as e:
+            # We might get an OperationalError here if the DB doesn't exist yet
             print(f"Couldn't create a connection to the database: {e}")
             return False
+
+    def initialise_tables_and_database(self):
+        """
+        Method to manage the creation of sqlite, postgres and mysql database and tables
+        """
+        handler_map = {
+            "sqlite": SQLiteHandler,
+            "postgres": PostgresHandler,
+            "mysql": MySQLHandler,
+        }
+
+        HandlerClass = handler_map.get(self.engine)
+        handler = HandlerClass(database_engine_configs=self)
+        handler.setup()
+        print(f"Database setup for {self.engine} complete.")
 
 
 """

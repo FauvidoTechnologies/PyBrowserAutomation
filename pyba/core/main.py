@@ -11,7 +11,7 @@ from pyba.core.lib.action import perform_action
 from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
-from pyba.database.database import Database
+from pyba.database import Database, DatabaseFunctions
 from pyba.logger import get_logger
 from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen
 from pyba.utils.load_yaml import load_config
@@ -56,8 +56,9 @@ class Engine:
         self.tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
 
-        # Call all database functons `self.database.session`
+        # Handle database instances using `db_funcs`
         self.database = database
+        self.db_funcs = DatabaseFunctions(self.database)
 
         # Initialising the loggering depending on whether the use_logger boolean is on
         self.log = get_logger(use_logger=use_logger)
