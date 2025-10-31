@@ -191,6 +191,9 @@ class Engine:
                         return output
 
                 self.log.action(action)
+                self.db_funcs.push_to_episodic_memory(
+                    session_id=self.session_id, action=str(action), page_url=str(self.page.url)
+                )
                 # If its not None, then perform it
                 await perform_action(self.page, action)
 
