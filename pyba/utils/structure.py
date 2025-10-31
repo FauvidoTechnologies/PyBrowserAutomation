@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from typing import Optional, List
 
 from pydantic import BaseModel
@@ -66,3 +67,29 @@ class OutputResponseFormat(BaseModel):
     """
 
     output: str
+
+
+@dataclass
+class CleanedDOM:
+    """
+    Represents the cleaned DOM snapshot of the current browser page.
+
+    Additional parameter for the youtube DOM extraction
+    """
+
+    hyperlinks: Optional[List[str]] = field(default_factory=list)
+    input_fields: Optional[List[str]] = field(default_factory=list)
+    clickable_fields: Optional[List[str]] = field(default_factory=list)
+    actual_text: Optional[str] = None
+    current_url: Optional[str] = None
+    youtube: Optional[str] = None  # For YouTube based DOM extraction
+
+    def to_dict(self) -> dict:
+        return {
+            "hyperlinks": self.hyperlinks,
+            "input_fields": self.input_fields,
+            "clickable_fields": self.clickable_fields,
+            "actual_text": self.actual_text,
+            "current_url": self.current_url,
+            "youtube": self.youtube,
+        }

@@ -15,6 +15,7 @@ from pyba.database import Database, DatabaseFunctions
 from pyba.logger import get_logger
 from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen
 from pyba.utils.load_yaml import load_config
+from pyba.utils.structure import CleanedDOM
 
 config = load_config("general")
 
@@ -133,13 +134,13 @@ class Engine:
 
             await self.page.goto("https://search.brave.com")
 
-            cleaned_dom = {
-                "hyperlinks": None,
-                "input_fields": ["#searchbox"],
-                "clickable_fields": None,
-                "actual_text": None,
-                "current_url": "https://search.brave.com",
-            }
+            cleaned_dom = CleanedDOM(
+                hyperlinks=[],
+                input_fields=["#searchbox"],
+                clickable_fields=[],
+                actual_text=None,
+                current_url="https://search.brave.com",
+            )
 
             for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
                 # First check if we need to login and run the scripts
@@ -165,7 +166,7 @@ class Engine:
                 # Get an actionable PlaywrightResponse from the models
                 try:
                     action = self.playwright_agent.process_action(
-                        cleaned_dom=cleaned_dom, user_prompt=prompt
+                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
                     )
                 except Exception as e:
                     self.log.error(f"something went wrong in obtaining the response: {e}")
@@ -177,7 +178,7 @@ class Engine:
                     await self.shut_down()
                     try:
                         output = self.playwright_agent.get_output(
-                            cleaned_dom=cleaned_dom, user_prompt=prompt
+                            cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
                         )
                         self.log.info(f"This is the output given by the model: {output}")
                         return output
@@ -185,7 +186,7 @@ class Engine:
                         # Usually a resource exhausted error
                         await asyncio.sleep(10)
                         output = self.playwright_agent.get_output(
-                            cleaned_dom=cleaned_dom, user_prompt=prompt
+                            cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
                         )
                         self.log.info(f"This is the output given by the model: {output}")
                         return output
@@ -235,7 +236,7 @@ class Engine:
                 # Perform an all out extraction
                 cleaned_dom = await extraction_engine.extract_all()
 
-                cleaned_dom["current_url"] = base_url
+                cleaned_dom.current_url = base_url
 
         await self.save_trace()
         await self.shut_down()

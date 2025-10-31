@@ -36,17 +36,16 @@ class ExtractionEngines:
             elements=self.elements,
             base_url=self.base_url,
         )
-        youtube = ExtractionEngines.youtube(page=self.page)
-
         general_output = await general.extract()
-
         self.output = general_output
+
+        youtube = ExtractionEngines.youtube(page=self.page)
 
         if "youtube.com" in self.page.url:
             # Usually the dom extraction is pretty fast but the videos take some time to load up in the javascript
             # Hence a small wait here helps in loading that
             await asyncio.sleep(3)
             youtube_output = await youtube.extract()
-            self.output["youtube"] = youtube_output
+            self.output.youtube = youtube_output
 
         return self.output

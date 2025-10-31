@@ -7,6 +7,7 @@ from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
 from pyba.utils.common import url_entropy
 from pyba.utils.load_yaml import load_config
+from pyba.utils.structure import CleanedDOM
 
 general_config = load_config("general")
 config = load_config("extraction")[
@@ -273,47 +274,42 @@ class GeneralDOMExtraction:
 
         return valid_fields
 
-    async def extract(self) -> dict:
+    async def extract(self) -> CleanedDOM:
         """
         Runs all extraction functions and returns a unified cleaned_dom dictionary.
 
         Returns:
-            dict: A dictionary containing hyperlinks, input fields, clickable fields, and text content.
+            CleanedDOM: A dataclass containing hyperlinks, input fields, clickable fields, and text content.
         """
-        cleaned_dom = {
-            "hyperlinks": None,
-            "input_fields": None,
-            "clickable_fields": None,
-            "actual_text": None,
-        }
+        cleaned_dom = CleanedDOM()
 
         try:
-            cleaned_dom["hyperlinks"] = self._extract_href()
+            cleaned_dom.hyperlinks = self._extract_href()
         except Exception as e:
-            cleaned_dom["hyperlinks"] = []
+            cleaned_dom.hyperlinks = []
             print(f"Failed to extract hyperlinks: {e}")
 
         try:
             if self.clickable_fields_flag:
-                cleaned_dom["clickable_fields"] = self._extract_clickables()
+                cleaned_dom.clickable_fields = self._extract_clickables()
             else:
-                cleaned_dom["clickable_fields"] = self._extract_clickables()[:10]
+                cleaned_dom.clickable_fields = self._extract_clickables()[:10]
                 # This is taking way too many tokens so restricting the total number.
                 # There has to be a better way to do this!
         except Exception as e:
-            cleaned_dom["clickable_fields"] = []
+            cleaned_dom.clickable_fields = []
             print(f"Failed to extract clickables: {e}")
 
         try:
-            cleaned_dom["actual_text"] = await self._extract_all_text()
+            cleaned_dom.actual_text = await self._extract_all_text()
         except Exception as e:
-            cleaned_dom["actual_text"] = []
+            cleaned_dom.actual_text = []
             print(f"Failed to extract text: {e}")
 
         try:
-            cleaned_dom["input_fields"] = await self._extract_input_fields()
+            cleaned_dom.input_fields = await self._extract_input_fields()
         except Exception as e:
-            cleaned_dom["input_fields"] = []
+            cleaned_dom.input_fields = []
             print(f"Failed to extract input fields: {e}")
 
         return cleaned_dom
