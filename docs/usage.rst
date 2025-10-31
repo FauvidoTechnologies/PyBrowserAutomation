@@ -33,6 +33,18 @@ Below is a quickstart guide to start using PyBA.
    agent.sync_run("Go to twitter and search for 'cybersecurity news'")
 
 
+or you can save the output from the automation to use later in your code:
+
+.. code-block:: python
+
+   from pyba import Engine
+
+   # If OpenAI
+   agent = Engine(openai_api_key="")
+   output = agent.async_run(prompt="Login to my instagram and give me all the IDs present in my feed", automated_login_sites=["instagram"]) # More details on `automated_login_sites` later
+
+   print(output)
+
 You can run ``pyba`` in both **sync** and **async** modes depending on your use case. To run the **async** endpoint simply use ``.run()``
 
 .. code-block:: python
@@ -195,10 +207,26 @@ The library supports three types of databases:
 * PostgreSQL (server-client)
 * SQLite (file based system)
 
-Set the data configurations using the ``Database`` class from pyba
+Set the data configurations using the ``Database`` class from ``pyba`` and set the engines
 
 .. code-block:: python
 
    from pyba import Engine, Database
 
-Set the 
+   database = Database(name="sqlite", name="/tmp/pyba/pyba.db")
+   engine = Engine(openai_api_key="", enable_tracing=True, database=database)
+
+   output = engine.sync_run(prompt="Visit Flipkart and find the price of the costliest iphone")
+
+   print(output)
+
+
+You can check for a database called ``EpisodicMemory`` at ``/tmp/pyba/pyba.db``
+
+.. code-block:: bash
+   sqlite3 /tmp/pyba/pyba.db
+   > .tables
+   > select * from EpisodicMemory;
+
+.. note::
+   Coming soon: Features for creating an automation script based on what was achieved to save you tokens in case you need to run the same thing multiple times or use it in a report for reproducibility
