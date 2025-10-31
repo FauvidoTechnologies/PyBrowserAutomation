@@ -11,6 +11,7 @@ from pyba.core.lib.action import perform_action
 from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
+from pyba.database.database import Database
 from pyba.logger import get_logger
 from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen
 from pyba.utils.load_yaml import load_config
@@ -33,6 +34,7 @@ class Engine:
         use_logger: bool = config["main_engine_configs"]["use_logger"],
         enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
         trace_save_directory: str = None,
+        database: Database = None,
     ):
         """
         Args:
@@ -45,12 +47,17 @@ class Engine:
             enable_tracing: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
             trace_save_directory: The directory where you want the .zip file to be saved
 
+            database: An instance of the Database class which will define all database specific configs
+
         Find these default values at `pyba/config.yaml`
         """
         self.session_id = uuid.uuid4().hex
         self.headless_mode = headless
         self.tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
+
+        # Call all database functons `self.database.session`
+        self.database = database
 
         # Initialising the loggering depending on whether the use_logger boolean is on
         self.log = get_logger(use_logger=use_logger)
@@ -76,9 +83,10 @@ class Engine:
         self.location = provider_instance.location
 
         # Defining the playwright agent with the defined configs
-        self.playwright_agent = PlaywrightAgent(engine=self)  # This is amusing
+        self.playwright_agent = PlaywrightAgent(engine=self)
 
-    def handle_dependencies(self, handle_dependencies: bool):
+    @staticmethod
+    def handle_dependencies(handle_dependencies: bool):
         if handle_dependencies:
             HandleDependencies.playwright.handle_dependencies()
 

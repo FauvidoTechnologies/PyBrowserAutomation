@@ -62,6 +62,35 @@ automated_login_configs:
     uses_2FA: True
     2FA_wait_value: "mail\\.google\\.com"
 
+database:
+#   sqlite:
+#     `engine`: "sqlite"
+#     `name`: path to the database file
+#     other details can be left empty
+  
+#   mysql:
+#     `engine`: "mysql"
+#     `name`: Name of the mysql database
+#     `username` and `password`: For logging into the server
+#     `host` and `port`: Location of the server
+#     Note: Default port is 3306 for MySQL
+
+#   postgres:
+#     `engine`: "postgres"
+#     `name`: Name of the postgres database
+#     `username` and `password`: For logging into the server
+#     `host` and `port`: Location of the server
+#     Note: Default port is 5432 for MySQL
+#     Note: `ssl_mode`: "require" for encrypted databases
+
+  engine: "sqlite"
+  name: "/tmp/pyba/pyba.db"
+  host: ""
+  port: ""
+  username: ""
+  password: ""
+  ssl_mode: ""
+
 process_config:
   selectors :
     - "input:not([type='hidden']):not([type='submit']):not([type='button']):not([type='reset']):not([type='file'])"
