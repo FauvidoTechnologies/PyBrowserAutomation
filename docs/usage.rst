@@ -10,8 +10,9 @@ Usage Guide
 ===========
 
 .. contents::
-   :local:
-   :depth: 2
+
+:local: 
+:depth: 2
 
 .. _quickstart:
 
@@ -26,7 +27,7 @@ Below is a quickstart guide to start using PyBA.
 
    # If VertexAI
    agent = Engine(vertexai_project_id="", vertexai_server_location="")
-   
+
    # If OpenAI
    agent = Engine(openai_api_key="")
    agent.sync_run("Go to twitter and search for 'cybersecurity news'")
@@ -47,7 +48,6 @@ Enable local **logging** if you need
 .. code-block:: python
 
    from pyba import Engine
-
    # If OpenAI
    agent = Engine(openai_api_key="", use_logger=True)
    agent.run("Go to twitter and search for 'cybersecurity news'")
@@ -69,11 +69,11 @@ PyPI
 .. code-block:: bash
 
    pip install py-browser-automation
-
+   
 .. _installation-source:
 
 Source
-^^^^^^^^^^^
+^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -86,17 +86,16 @@ Source
 Guide
 --------------
 
-.. _dependency-management
+.. _dependency-management:
 
 Dependency management
-^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 ``pyba`` will automatically install playwright and other system dependencies. If they're already installed then it will skip the installation.
 
 .. code-block:: python
 
    from pyba import Engine
-
    # If OpenAI
    agent = Engine(openai_api_key="", handle_dependencies=True)
    agent.run("Go to twitter and search for 'cybersecurity news'")
@@ -106,19 +105,18 @@ You can also install the dependencies manually
 .. code-block:: bash
 
    playwright install-deps # Install dependencies
-   playwright install      # Install browsers
+   playwright install # Install browsers 
 
-.. _tracing
+.. _tracing:
 
 Tracing
-^^^^^^^^^^^
+^^^^^^^
 
 ``pyba`` has support for playwright traceviewer by allowing you to enable tracing and generate a ``.zip`` file
 
 .. code-block:: python
 
    from pyba import Engine
-
    # If OpenAI
    agent = Engine(openai_api_key="", use_logger=True, enable_tracing=True)
    agent.run("Go to twitter and search for 'cybersecurity news'")
@@ -128,23 +126,22 @@ You can optionally choose a directory to save the ``.zip`` file to.
 .. code-block:: python
 
    from pyba import Engine
-
    # If OpenAI
    agent = Engine(
-         openai_api_key="",
-         use_logger=True,
-         enable_tracing=True,
-         trace_save_directory="your-directory",
-      )
+      openai_api_key="",
+      use_logger=True,
+      enable_tracing=True,
+      trace_save_directory="your-directory",
+   )
    agent.run("Go to twitter and search for 'cybersecurity news'")
 
 .. note::
    By default pyba will create a directory **/tmp/pyba** and save the traces with a unique trace_id
 
-.. _headless
+.. _headless:
 
 Headless
-^^^^^^^^^^^
+^^^^^^^^
 
 The headless mode is supported
 
@@ -154,20 +151,20 @@ The headless mode is supported
 
    # If OpenAI
    agent = Engine(
-         openai_api_key="",
-         use_logger=True,
-         enable_tracing=True,
-         trace_save_directory="your-directory",
-         headless=True,
-      )
+      openai_api_key="",
+      use_logger=True,
+      enable_tracing=True,
+      trace_save_directory="your-directory",
+      headless=True,
+   )
    agent.run("Go to twitter and search for 'cybersecurity news'")
 
 Using the ``headless`` will render some construction useless. This is because we rely on javascript execution in specific functions (see ``extractions.js``).
 
-.. _auto-login
+.. _auto-login:
 
 Automated-logins
-^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 The library was specifically built for exploratory purposes, and should you need to enter a social media site which requires a login (like Instagram, Twitter, Facebook, LinkedIn etc.) then ``pyba`` will handle that automatically.
 
@@ -179,10 +176,10 @@ Specify which sites you want to login to in the ``.run()`` argument
 
    # If OpenAI
    agent = Engine(
-         openai_api_key="",
-         use_logger=True,
-         enable_tracing=True,
-         trace_save_directory="your-directory",
-         headless=False,
-      )
+      openai_api_key="",
+      use_logger=True,
+      enable_tracing=True,
+      trace_save_directory="your-directory",
+      headless=False,
+   )
    agent.run("Go to instagram and like all posts by mrbeast", automated_login_sites=["instagram"])

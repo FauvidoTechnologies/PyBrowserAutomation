@@ -27,6 +27,7 @@ pyyaml = "^6.0.3"
 python-dotenv = "^1.1.1"
 playwright-stealth = "^2.0.0"
 colorama = "^0.4.6"
+sqlalchemy = "^2.0.44"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "<8.0.0"

@@ -42,7 +42,6 @@ pyba.utils.structure module
 .. automodule:: pyba.utils.structure
    :members:
    :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------

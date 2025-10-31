@@ -12,14 +12,6 @@ pyba.core.lib.action module
    :undoc-members:
    :show-inheritance:
 
-pyba.core.lib.extractions module
---------------------------------
-
-.. automodule:: pyba.core.lib.extractions
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 pyba.core.lib.handle\_dependencies module
 -----------------------------------------
 

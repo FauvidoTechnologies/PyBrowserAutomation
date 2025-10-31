@@ -4,8 +4,10 @@ pyba.utils.prompts package
 Submodules
 ----------
 
-pyba.utils.prompts.general\_prompt module
+Genearl prompt
 -----------------------------------------
+
+Holds the general prompt for the model which can be formatted with the cleaned DOM
 
 .. automodule:: pyba.utils.prompts.general_prompt
    :members:
@@ -14,6 +16,8 @@ pyba.utils.prompts.general\_prompt module
 
 pyba.utils.prompts.system\_prompt module
 ----------------------------------------
+
+The system prompt for the model
 
 .. automodule:: pyba.utils.prompts.system_prompt
    :members:

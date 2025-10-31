@@ -17,12 +17,24 @@ The main differentiating factors between pyba and others are as follows:
 - Generates multiple ``plans`` optionally to achieve a particular task and performs them in parallel
 - Perfect for use cases when the task is **not** extremely clear and more exploratory in nature
 
-The current software version is ``0.1.7`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
+Features
+--------
+
+* ``Trace zip`` file creation to recreate the automation for playwright traceviewer
+* ``Logger`` and ``dependency management`` automatically
+* Creation of the ``automation script`` in file once successful
+* Local and server based ``database creation`` for holding all the actions performed
+* ``Stealth mode and config`` heavy files for custom bypass laws
+* Quick ``login to social media sites`` without passing credentials to the LLM
+
+The current software version is ``0.1.9`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    modules
-   pyba
+   pyba.core
+   pyba.database
+   pyba.utils
    usage

@@ -8,12 +8,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../.."))
 
 project = "pyba"
 copyright = "2025, purge12"
 author = "purge12"
-release = "0.1.6"
+release = "0.1.9"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -33,5 +33,12 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "alabaster"
 html_static_path = ["_static"]
+
+# Auto doc creation using the docstrings
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "inherited-members": False,  # Otherwise we'll get Pydantic docs as well!
+    "show-inheritance": True,
+}
