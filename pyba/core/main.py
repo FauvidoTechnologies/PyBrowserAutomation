@@ -13,9 +13,9 @@ from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
 from pyba.database import Database, DatabaseFunctions
 from pyba.logger import get_logger
+from pyba.utils.common import initial_page_setup
 from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen
 from pyba.utils.load_yaml import load_config
-from pyba.utils.structure import CleanedDOM
 
 config = load_config("general")
 
@@ -131,16 +131,7 @@ class Engine:
 
             self.context = await tracing.initialize_context()
             self.page = await self.context.new_page()
-
-            await self.page.goto("https://search.brave.com")
-
-            cleaned_dom = CleanedDOM(
-                hyperlinks=[],
-                input_fields=["#searchbox"],
-                clickable_fields=[],
-                actual_text=None,
-                current_url="https://search.brave.com",
-            )
+            cleaned_dom = await initial_page_setup(self.page)
 
             for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
                 # First check if we need to login and run the scripts
