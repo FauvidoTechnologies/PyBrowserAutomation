@@ -8,6 +8,7 @@ from playwright_stealth import Stealth
 from pyba.core.agent.playwright_agent import PlaywrightAgent
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
+from pyba.core.lib.code_generation import CodeGeneration
 from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
@@ -259,3 +260,18 @@ class Engine:
 
         if output:
             return output
+
+    def generate_code(self, output_path: str) -> bool:
+        """
+        Function end-point for code generation
+
+        Args:
+            `output_path`: output file path to save the generated code to
+        """
+
+        codegen = CodeGeneration(
+            session_id=self.session_id, output_path=output_path, database_funcs=self.db_funcs
+        )
+        codegen.generate_script()
+        self.log.info(f"Created the script at: {output_path}")
+        return True
