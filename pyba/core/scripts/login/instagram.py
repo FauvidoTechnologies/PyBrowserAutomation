@@ -79,7 +79,7 @@ class InstagramLogin:
             await self.page.fill(config["username_selector"], self.username)
             await self.page.fill(config["password_selector"], self.password)
 
-            await self.page.click()
+            await self.page.click(config["submit_selector"])
         except Exception:
             try:
                 # Alternate fields that instagram uses
