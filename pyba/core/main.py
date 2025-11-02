@@ -136,10 +136,13 @@ class Engine:
 
             for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
                 # First check if we need to login and run the scripts
+                login_attempted_successfully = False
+
                 # If loginengines have been chosen then self.automated_login_engine_classes will be populated
                 if self.automated_login_engine_classes:
                     for engine in self.automated_login_engine_classes:
                         engine_instance = engine(self.page)
+                        self.log.info(f"Testing for {engine_instance.engine_name} login engine")
                         # Instead of just running it and checking inside, we can have a simple lookup list
                         out_flag = await engine_instance.run()
                         if out_flag:
@@ -147,12 +150,40 @@ class Engine:
                             self.log.success(
                                 f"Logged in successfully through the {self.page.url} link"
                             )
+                            login_attempted_successfully = True
+                            break
                         elif out_flag is None:
                             # This means it wasn't for a login page for this engine
                             pass
                         else:
                             # This means it failed
                             self.log.warning(f"Login attempted at {self.page.url} but failed!")
+                if login_attempted_successfully:
+                    # Clean the automated_login_engine_classes
+                    self.automated_login_engine_classes = None
+                    # Update the DOM after a login
+                    try:
+                        await self.page.wait_for_load_state("networkidle", timeout=2000)
+                    except Exception:
+                        await asyncio.sleep(2)
+
+                    page_html = await self.page.content()
+                    body_text = await self.page.inner_text("body")
+                    elements = await self.page.query_selector_all(self.combined_selector)
+                    base_url = self.page.url
+
+                    extraction_engine = ExtractionEngines(
+                        html=page_html,
+                        body_text=body_text,
+                        elements=elements,
+                        base_url=base_url,
+                        page=self.page,
+                    )
+                    cleaned_dom = await extraction_engine.extract_all()
+                    cleaned_dom.current_url = base_url
+
+                    # Jump to the next iteration of the `for` loop
+                    continue
 
                 # Say we're going to run only 10 steps so far, so after this no more automation
                 # Get an actionable PlaywrightResponse from the models
