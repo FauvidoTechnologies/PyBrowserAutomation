@@ -124,7 +124,14 @@ class GeneralDOMExtraction:
                 }
             )
 
-        return results
+        # Cleaning this up based on outer_html
+
+        cleaned = []
+        for el in results:
+            data = {k: v for k, v in el.items() if v and k != "outer_html"}
+            cleaned.append(data)
+
+        return cleaned
 
     def _extract_href(self) -> List[str]:
         soup = BeautifulSoup(str(self.html), "html.parser")
