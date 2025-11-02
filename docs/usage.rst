@@ -213,7 +213,7 @@ Set the data configurations using the ``Database`` class from ``pyba`` and set t
 
    from pyba import Engine, Database
 
-   database = Database(name="sqlite", name="/tmp/pyba/pyba.db")
+   database = Database(engine="sqlite", name="/tmp/pyba/pyba.db")
    engine = Engine(openai_api_key="", enable_tracing=True, database=database)
 
    output = engine.sync_run(prompt="Visit Flipkart and find the price of the costliest iphone")
