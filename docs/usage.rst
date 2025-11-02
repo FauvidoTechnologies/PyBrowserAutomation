@@ -10,9 +10,17 @@ Usage Guide
 ===========
 
 .. contents::
+   :local: 
+   :depth: 2
 
-:local: 
-:depth: 2
+Features
+--------
+
+* Run natural-language automation using OpenAI or VertexAI
+* Built-in dependency management and tracing
+* Automated logins for major platforms (Instagram, Twitter, etc.)
+* SQLite / MySQL / PostgreSQL support for trace storage
+* Code generation for reusable scripts
 
 .. _quickstart:
 
@@ -213,7 +221,7 @@ Set the data configurations using the ``Database`` class from ``pyba`` and set t
 
    from pyba import Engine, Database
 
-   database = Database(engine="sqlite", name="/tmp/pyba/pyba.db")
+   database = Database(enginec="sqlite", name="/tmp/pyba/pyba.db")
    engine = Engine(openai_api_key="", enable_tracing=True, database=database)
 
    output = engine.sync_run(prompt="Visit Flipkart and find the price of the costliest iphone")
@@ -251,10 +259,36 @@ You can create the automation scripts that are used by ``pyba`` to run it multip
    database = Database(name="sqlite", name="/tmp/pyba/pyba.db")
    engine = Engine(openai_api_key="", enable_logging=True, database=database, use_logger=True)
 
-   output = engine.sync_run(prompt="Order the costliest iphone from amazon India")
+   output = engine.sync_run(prompt="search for all phones on flipkart")
 
    print(output)
 
    val = engine.generate_code(output_path="/tmp/pyba/automation_code.py")
    if val:
       print("Code generated!")
+
+Generated code example:
+
+.. code-block:: python
+
+   import time
+   from playwright.sync_api import sync_playwright
+
+   def run_automation():
+       with sync_playwright() as p:
+           browser = p.chromium.launch(headless=False)
+           page = browser.new_page()
+
+           # Step 1: goto
+           page.goto("https://www.flipkart.com")
+
+           # Step 2: goto
+           page.fill("input[name='q']", "mobile")
+
+           # Step 3: goto
+           page.press("input[name='q']", "Enter")
+           time.sleep(3) # Keep browser open for 3 seconds to see the result
+           browser.close()
+
+   if __name__ == '__main__':
+       run_automation()
