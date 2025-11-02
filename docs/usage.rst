@@ -179,7 +179,8 @@ The headless mode is supported
    )
    agent.run("Go to twitter and search for 'cybersecurity news'")
 
-Using the ``headless`` will render some construction useless. This is because we rely on javascript execution in specific functions (see ``extractions.js``).
+.. note::
+   Using ``headless=True`` may disable certain visual extraction features, since they rely on JavaScript execution (see ``extractions.js``).
 
 .. _auto-login:
 
@@ -221,7 +222,7 @@ Set the data configurations using the ``Database`` class from ``pyba`` and set t
 
    from pyba import Engine, Database
 
-   database = Database(enginec="sqlite", name="/tmp/pyba/pyba.db")
+   database = Database(engine="sqlite", name="/tmp/pyba/pyba.db")
    engine = Engine(openai_api_key="", enable_tracing=True, database=database)
 
    output = engine.sync_run(prompt="Visit Flipkart and find the price of the costliest iphone")
@@ -256,7 +257,7 @@ You can create the automation scripts that are used by ``pyba`` to run it multip
 
    from pyba import Engine, Database
 
-   database = Database(name="sqlite", name="/tmp/pyba/pyba.db")
+   database = Database(engine="sqlite", name="/tmp/pyba/pyba.db")
    engine = Engine(openai_api_key="", enable_logging=True, database=database, use_logger=True)
 
    output = engine.sync_run(prompt="search for all phones on flipkart")
