@@ -230,3 +230,31 @@ You can check for a database called ``EpisodicMemory`` at ``/tmp/pyba/pyba.db``
 
 .. note::
    Coming soon: Features for creating an automation script based on what was achieved to save you tokens in case you need to run the same thing multiple times or use it in a report for reproducibility
+
+.. _code-generation:
+
+Automation script generation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can create the automation scripts that are used by ``pyba`` to run it multiple times
+
+.. note::
+   To create the script you'll need to use the database feature
+
+.. note::
+   We're supporting only playwright ``sync endpoints`` right now
+
+.. code-block:: python
+
+   from pyba import Engine, Database
+
+   database = Database(name="sqlite", name="/tmp/pyba/pyba.db")
+   engine = Engine(openai_api_key="", enable_logging=True, database=database, use_logger=True)
+
+   output = engine.sync_run(prompt="Order the costliest iphone from amazon India")
+
+   print(output)
+
+   val = engine.generate_code(output_path="/tmp/pyba/automation_code.py")
+   if val:
+      print("Code generated!")
