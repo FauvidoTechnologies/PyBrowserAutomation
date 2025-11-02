@@ -2,6 +2,15 @@
 
 This is a no-code browser automation software written in python. It can visit any website, automate testing, repetitive tasks, form filling and more. This library is specifically built for more exploratory analysis than EXACT inputs (though it supports both through different modes).
 
+## Features
+
+- `Trace zip` file creation to recreate the automation for playwright traceviewer
+- `Logger` and `dependency management` automatically
+- Creation of the `automation script` in file once successful
+- `Local and server based` database creation for holding all the actions performed
+- Stealth mode and config heavy files for custom bypass laws
+- `Quick login` to social media sites **without passing credentials** to the LLM
+
 ## Idea
 
 This library will allow you to run an inhouse playwright instance and automate any task. These tasks can be related to web-scraping, OSINT (OpenSource INTelligence) etc.
@@ -30,7 +39,7 @@ cd PyBrowserAutomation
 pip install .
 ```
 
-## Usage
+## Usage (quickstart)
 
 > [!NOTE]
 > For more detailed instructions visit the [docs](https://pyba.readthedocs.io/)
@@ -61,4 +70,8 @@ engine = Engine(openai_api_key="", handle_dependencies=False)
 engine.sync_run(prompt="open instagram")
 ```
 
-For more use cases, check out the [examples](./examples) direcrtory.
+For more use cases, check out the [evals](./automation_eval) direcrtory.
+
+---
+
+If the software has helped, consider giving us a star!
