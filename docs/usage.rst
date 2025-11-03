@@ -127,6 +127,13 @@ You can also install the dependencies manually
    playwright install-deps # Install dependencies
    playwright install # Install browsers 
 
+Or, you can use the DependencyManager to install them for you,
+
+.. code-block:: python
+
+   from pyba.core import DependencyManager as dm
+   dm.playwright.handle_dependencies()
+
 .. _tracing:
 
 Tracing
