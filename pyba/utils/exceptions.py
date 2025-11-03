@@ -46,3 +46,14 @@ class UnknownSiteChosen(Exception):
         super().__init__(
             f"Unknown site chosen for automated login. The following sites are available: {sites}"
         )
+
+
+class DatabaseNotInitialised(Exception):
+    """
+    Exception to be raised when the user asks for automation code generation but has not initialised the database!
+    """
+
+    def __init__(self):
+        super().__init__(
+            "Tried to call for code-generation without logging in a database! Please initialise the database."
+        )

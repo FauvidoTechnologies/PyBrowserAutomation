@@ -15,7 +15,7 @@ from pyba.core.tracing import Tracing
 from pyba.database import Database, DatabaseFunctions
 from pyba.logger import get_logger
 from pyba.utils.common import initial_page_setup
-from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen
+from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen, DatabaseNotInitialised
 from pyba.utils.load_yaml import load_config
 
 config = load_config("general")
@@ -60,7 +60,7 @@ class Engine:
 
         # Handle database instances using `db_funcs`
         self.database = database
-        self.db_funcs = DatabaseFunctions(self.database)
+        self.db_funcs = DatabaseFunctions(self.database) if database else None
 
         # Initialising the loggering depending on whether the use_logger boolean is on
         self.log = get_logger(use_logger=use_logger)
@@ -215,9 +215,10 @@ class Engine:
                         return output
 
                 self.log.action(action)
-                self.db_funcs.push_to_episodic_memory(
-                    session_id=self.session_id, action=str(action), page_url=str(self.page.url)
-                )
+                if self.db_funcs:
+                    self.db_funcs.push_to_episodic_memory(
+                        session_id=self.session_id, action=str(action), page_url=str(self.page.url)
+                    )
                 # If its not None, then perform it
                 await perform_action(self.page, action)
 
@@ -299,6 +300,8 @@ class Engine:
         Args:
             `output_path`: output file path to save the generated code to
         """
+        if not self.db_funcs:
+            raise DatabaseNotInitialised()
 
         codegen = CodeGeneration(
             session_id=self.session_id, output_path=output_path, database_funcs=self.db_funcs
