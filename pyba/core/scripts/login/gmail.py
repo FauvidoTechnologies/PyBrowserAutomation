@@ -1,11 +1,11 @@
 import os
 import re
 from typing import Optional
-from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from playwright.async_api import Page
 
+from pyba.utils.common import verify_login_page
 from pyba.utils.exceptions import CredentialsnotSpecified
 from pyba.utils.load_yaml import load_config
 
@@ -33,29 +33,6 @@ class GmailLogin:
         self.uses_2FA = config["uses_2FA"]
         self.final_2FA_url = re.compile(config["2FA_wait_value"])
 
-    def verify_login_page(self):
-        """
-        Make sure that the script we're going to run is made for this login page itself. This uses multiple ways to
-        ensure that. First it verifies it through the URL, then checks if the elements we are going to append to.
-        """
-
-        page_url = self.page.url
-        gmail_urls = list(config["urls"])
-
-        # We'll have to clean the URL from all the url formatting to the basic thing and match it with this.
-        # This can be done using urlparse and normalizing it first
-        parsed = urlparse(page_url)
-        normalized_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-
-        if not normalized_url.endswith("/"):
-            normalized_url += "/"
-
-        # Keeping it simple with this right now, later we can make this better
-        if normalized_url in gmail_urls:
-            return True
-        else:
-            return False
-
     async def run(self) -> Optional[bool]:
         """
         Take in the username and password from the .env file and use
@@ -67,7 +44,7 @@ class GmailLogin:
 
         The return type triggers the main execution loop of the login status
         """
-        val = self.verify_login_page()
+        val = verify_login_page(page_url=self.page.url, url_list=list(config["urls"]))
         if not val:
             return None
 

@@ -1,10 +1,10 @@
 import os
 from typing import Optional
-from urllib.parse import urlparse
 
 from dotenv import load_dotenv
 from playwright.async_api import Page
 
+from pyba.utils.common import verify_login_page
 from pyba.utils.exceptions import CredentialsnotSpecified
 from pyba.utils.load_yaml import load_config
 
@@ -36,30 +36,6 @@ class InstagramLogin:
 
         self.uses_2FA = False
 
-    def verify_login_page(self):
-        """
-        Make sure that the script we're going to run is made for this login page itself. This uses multiple ways to
-        ensure that. First it verifies it through the URL, then checks if the elements we are going to append to.
-        """
-
-        page_url = self.page.url
-
-        instagram_urls = list(config["urls"])
-
-        # We'll have to clean the URL from all the url formatting to the basic thing and match it with this.
-        # This can be done using urlparse and normalizing it first
-        parsed = urlparse(page_url)
-        normalized_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-
-        if not normalized_url.endswith("/"):
-            normalized_url += "/"
-
-        # Keeping it simple with this right now, later we can make this better
-        if normalized_url in instagram_urls:
-            return True
-        else:
-            return False
-
     async def run(self) -> Optional[bool]:
         """
         The idea is to take in the username and password from the .env file for now
@@ -69,7 +45,8 @@ class InstagramLogin:
                 `None` if we're not supposed to launch the automated login script here
                 `True/False` if the login was successful or a failure
         """
-        val = self.verify_login_page()
+        val = verify_login_page(page_url=self.page.url, url_list=list(config["urls"]))
+
         if not val:
             return None
 

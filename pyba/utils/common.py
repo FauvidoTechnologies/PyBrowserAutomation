@@ -1,5 +1,6 @@
 import math
 from collections import Counter
+from typing import List
 from urllib.parse import urlparse
 
 from playwright.async_api import Page
@@ -43,3 +44,29 @@ async def initial_page_setup(page: Page) -> CleanedDOM:
     )
 
     return cleaned_dom
+
+
+def verify_login_page(page_url: str, url_list: List[str]):
+    """
+    Helper function called inside login engines
+
+    Args:
+        `page_url`: The page URL to be checked against a known list
+        `url_list`: The know URL list for login sites for the specific website
+
+    Returns:
+        bool: Depending on whether this page is one of the login ones or not
+
+    Note: This assumes that all the urls in the `url_list` are ending with a "/".
+    """
+    parsed = urlparse(page_url)
+    normalized_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+    if not normalized_url.endswith("/"):
+        normalized_url += "/"
+
+    # Keeping it simple with this right now, later we can make this better
+    if normalized_url in url_list:
+        return True
+    else:
+        return False
