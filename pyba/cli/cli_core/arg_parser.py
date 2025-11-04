@@ -1,0 +1,216 @@
+import sys
+from argparse import ArgumentParser
+
+
+class ArgParser(ArgumentParser):
+    """
+    Argparser class. This class holds the definitions for each flag
+    along with their default values and parses them individually
+    """
+
+    def __init__(self) -> None:
+        super().__init__(prog="pyba", add_help=True)
+
+        self.add_arguments()
+        self.parse_arguments()
+
+    def add_arguments(self):
+        main_options = self.add_argument_group(
+            "Main", "The main input options. (as in the 'main' file)"
+        )
+        main_options.add_argument(
+            "-V",
+            "--version",
+            action="store_true",
+            dest="show_version",
+            default=False,  # Do not hardcode this, read from a version file
+            help="Display the software version",
+        )
+
+        base_parser = ArgumentParser(add_help=False)
+        base_parser.add_argument(
+            "--openai-api-key",
+            action="store",
+            default=None,
+            dest="openai_api_key",
+            help="OpenAI API Key if you wish to run the automations using OpenAI's models",
+        )
+
+        base_parser.add_argument(
+            "--vertexai-project-id",
+            action="store",
+            default=None,
+            dest="vertexai_project_id",
+            help="VertexAI project ID if you wish to run the automations using VertexAI's gemini models. Note that vertexai must be properly setup before using this option",
+        )
+
+        base_parser.add_argument(
+            "--vertexai-server-location",
+            action="store",
+            default=None,
+            dest="vertexai_server_location",
+            help="VertexAI server location if you wish to run the automations using VertexAI's gemini models. Note that vertexai must be properly setup before using this option",
+        )
+
+        base_parser.add_argument(
+            "--headless",
+            action="store_true",
+            default=False,
+            dest="headless_mode",
+            help="Run the automations in headless mode. Useful for web scraping",
+        )
+
+        base_parser.add_argument(
+            "--handle-deps",
+            action="store_true",
+            default=False,
+            dest="handle_dependencies",
+            help="Automatically handle all playwright dependencies",
+        )
+
+        base_parser.add_argument(
+            "-v",
+            action="store_true",
+            default=False,
+            dest="use_logger",
+            help="Start the automations in the verbose mode to get live updates",
+        )
+
+        base_parser.add_argument(
+            "--enable-tracing",
+            action="store_true",
+            default=False,
+            dest="enable_tracing",
+            help="Start's tracing all playwright moves and network requests to create a zip file which can be viewed in playwright traceviewer",
+        )
+
+        base_parser.add_argument(
+            "--trace-save-dir",
+            action="store",
+            default=None,
+            dest="trace_save_directory",
+            help="Directory to save the trace zip file",
+        )
+
+        base_parser.add_argument(
+            "-t",
+            "--task",
+            action="store",
+            dest="task",
+            default=None,
+            help="The task which needs to be automated as a string",
+        )
+
+        base_parser.add_argument(
+            "-L",
+            "--login-sites",
+            action="append",
+            dest="automated_login_sites",
+            default=None,
+            help="The automated login engine names. Note: To use these you will need to set the username and password in your enviornment. Please read the man page.",
+        )
+
+        subparsers = self.add_subparsers(
+            title="modes",
+            dest="mode",
+            required=False,  # Run the base and main flags without setting the mode
+            description="Choose the database mode if you wish to log actions and use them for script generation",
+            parser_class=ArgumentParser,
+        )
+
+        # TODO
+        # clarification_mode = subparsers.add_parser("clarify", help="Clarification mode for asking questions to the user about unsure steps", parents=[base_parser])
+
+        # Normal Mode
+        subparsers.add_parser(
+            "normal",
+            help="Does not store logs or ask clarifications during automation",
+            parents=[base_parser],
+        )
+
+        # Database Mode
+        database_mode = subparsers.add_parser(
+            "database",
+            help="Store logs in the database for script creation",
+            parents=[base_parser],
+        )
+        database_mode.add_argument(
+            "-e",
+            "--engine",
+            action="store",
+            default=None,
+            required=True,
+            dest="database_engine",
+            help="The database engine you wish to use",  # This needs to be more explicit
+        )
+
+        database_mode.add_argument(
+            "-n",
+            "--name",
+            action="store",
+            default=None,
+            required=True,
+            dest="database_name",
+            help="Name of the database in case of MySQL and PostgreSQL, and the path to the database file in case of SQLite",
+        )
+
+        database_mode.add_argument(
+            "-u",
+            "--username",
+            action="store",
+            default=None,
+            dest="database_username",
+            help="The username for logging into the database server while using MySQL or PostgreSQL",
+        )
+        database_mode.add_argument(
+            "-p",
+            "--password",
+            action="store",
+            default=None,
+            dest="database_password",
+            help="The password for logging into the database server while using MySQL or PostgreSQL",
+        )
+        database_mode.add_argument(
+            "-H",
+            "--host-name",
+            action="store",
+            default=None,
+            dest="database_host",
+            help="The host IP serving the MySQL or PostgreSQL databases",
+        )
+        database_mode.add_argument(
+            "-P",
+            "--port",
+            action="store",
+            default=None,
+            dest="database_port",
+            help="The host port serving the MySQL or PostgreSQL databases",
+        )
+        database_mode.add_argument(
+            "--ssl-mode",
+            action="store",
+            default="disabled",
+            dest="postgres_ssl_mode",
+            help="The ssl_mode for running PostgreSQL databases. Can be disable or required, defaults at disabled",
+        )
+
+    def parse_arguments(self):
+        """
+        check all rules and requirements for ARGS
+
+        Args:
+        api_forms: values from nettacker.api
+
+        Returns:
+        all ARGS with applied rules
+        """
+        options = self.parse_args()
+
+        if options.show_version:
+            print("This is the version: 0.2.1")
+            sys.exit(0)
+
+        self.arguments = options
+
+
+a = ArgParser()

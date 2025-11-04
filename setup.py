@@ -15,5 +15,10 @@ setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ],
+    entry_points={
+        "console_scripts": [
+            "pyba = pyba.cli.main:main",
+        ],
+    },
     python_requires=">=3.8",
 )
