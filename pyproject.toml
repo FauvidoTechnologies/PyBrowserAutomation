@@ -15,6 +15,10 @@ classifiers = [
 license = "MIT"
 readme = "README.md"
 packages = [{include = "pyba"}]
+documentation = "https://pyba.readthedocs.io/"
+
+[tool.poetry.scripts]
+pyba = "pyba.cli.cli_entry:main"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
