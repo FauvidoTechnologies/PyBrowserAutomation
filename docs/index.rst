@@ -26,8 +26,10 @@ Features
 * Local and server based ``database creation`` for holding all the actions performed
 * ``Stealth mode and config`` heavy files for custom bypass laws
 * Quick ``login to social media sites`` without passing credentials to the LLM
+* The automation script generatation based on tracked logs for repeatable use and accurate sources
+* CLI support for running in Terminal without a script
 
-The current software version is ``0.1.9`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
+The current software version is ``0.2.2`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
 
 .. toctree::
    :maxdepth: 2
@@ -38,3 +40,4 @@ The current software version is ``0.1.9`` which is NOT fully ready and under hea
    pyba.database
    pyba.utils
    usage
+   cli

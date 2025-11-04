@@ -13,15 +13,6 @@ Usage Guide
    :local: 
    :depth: 2
 
-Features
---------
-
-* Run natural-language automation using OpenAI or VertexAI
-* Built-in dependency management and tracing
-* Automated logins for major platforms (Instagram, Twitter, etc.)
-* SQLite / MySQL / PostgreSQL support for trace storage
-* Code generation for reusable scripts
-
 .. _quickstart:
 
 Quickstart
