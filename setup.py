@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
 
+from pyba.version import version
+
 setup(
     name="py-browser-automation",
-    version="0.2.1",
+    version=version,
     author="pUrGe12",
     author_email="achintya.jai@owasp.org",
     url="https://github.com/FauvidoTechnologies/PyBrowserAutomation",
@@ -17,7 +19,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "pyba = pyba.cli.main:main",
+            "pyba = pyba.cli.cli_entry:main",
         ],
     },
     python_requires=">=3.8",

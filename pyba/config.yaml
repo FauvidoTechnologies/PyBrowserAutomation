@@ -9,7 +9,7 @@ main_engine_configs:
   exploratory_mode: False     # Will not be running in exploratory mode by default
   use_logger: False           # Will not use the logger by default
   trace_save_directory: "."   # Saving the trace in the current directory by detault
-  
+  banner_path: "pyba/cli/banner.txt"
   # Tracing configs
   tracing:
     screenshots: False # Capture screenshots

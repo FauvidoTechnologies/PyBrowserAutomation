@@ -1,6 +1,8 @@
 import sys
 from argparse import ArgumentParser
 
+from pyba.version import version
+
 
 class ArgParser(ArgumentParser):
     """
@@ -12,7 +14,7 @@ class ArgParser(ArgumentParser):
         super().__init__(prog="pyba", add_help=True)
 
         self.add_arguments()
-        self.parse_arguments()
+        self.initialise_arguments()
 
     def add_arguments(self):
         main_options = self.add_argument_group(
@@ -194,7 +196,7 @@ class ArgParser(ArgumentParser):
             help="The ssl_mode for running PostgreSQL databases. Can be disable or required, defaults at disabled",
         )
 
-    def parse_arguments(self):
+    def initialise_arguments(self):
         """
         check all rules and requirements for ARGS
 
@@ -207,10 +209,17 @@ class ArgParser(ArgumentParser):
         options = self.parse_args()
 
         if options.show_version:
-            print("This is the version: 0.2.1")
+            print(f"Software version: {version}")
             sys.exit(0)
 
+        if options.automated_login_sites:
+            for site in options.automated_login_sites:
+                print(f"Automated login enabled for: {site}")
+
+        # passing all the keys directly to the run function because that handles it using the provider instance
+        if options.mode == "database":
+            if options.database_engine not in ["sqlite", "mysql", "postgres"]:
+                print("Wrong database engine chosen. Please choose from sqlite, mysql or postgres")
+                sys.exit(0)
+
         self.arguments = options
-
-
-a = ArgParser()

@@ -1,0 +1,75 @@
+from typing import Optional
+
+from pyba import Engine
+from pyba.cli.cli_core.arg_parser import ArgParser
+from pyba.database import Database
+
+
+class CLIMain(ArgParser):
+    """
+    Main class for pyba CLI
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        self.database = self.initialise_database()
+        self.initialise_engine()
+
+    def initialise_database(self) -> Optional[Database]:
+        """
+        Helper function to generate and initialise the database
+        """
+        database = None
+        if self.arguments.mode == "database":
+            database_configs = {
+                "engine": self.arguments.database_engine,
+                "name": self.arguments.database_name,
+                "username": self.arguments.database_username or None,
+                "password": self.arguments.database_password or None,
+                "host": self.arguments.database_host or None,
+                "port": self.arguments.database_port or None,
+                "ssl_mode": self.arguments.postgres_ssl_mode,
+            }
+
+            database = Database(**database_configs)
+
+        return database
+
+    def initialise_engine(self):
+        """
+        Initialises the engine using the provided user parameters
+        """
+
+        self.task = self.arguments.task
+        self.automated_login_sites = self.arguments.automated_login_sites
+
+        engine_configs = {
+            "openai_api_key": self.arguments.openai_api_key,
+            "vertexai_project_id": self.arguments.vertexai_project_id,
+            "vertexai_server_location": self.arguments.vertexai_server_location,
+            "headless": self.arguments.headless_mode,
+            "handle_dependencies": self.arguments.handle_dependencies,
+            "use_logger": self.arguments.use_logger,
+            "enable_tracing": self.arguments.enable_tracing,
+            "trace_save_directory": self.arguments.trace_save_directory,
+            "database": self.database,
+        }
+
+        self.engine = Engine(**engine_configs)
+
+    def cli_sync_run(self):
+        """
+        The CLI run function which calls the main runner with the instantiated arguments
+        """
+        self.engine.sync_run(self.task, automated_login_sites=self.automated_login_sites)
+
+    def cli_async_run(self):
+        """
+        The CLI run function for Async endpoints
+        """
+        self.engine.run(self.task, automated_login_sites=self.automated_login_sites)
+
+
+a = CLIMain()
+a.cli_sync_run()
