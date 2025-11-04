@@ -69,7 +69,3 @@ class CLIMain(ArgParser):
         The CLI run function for Async endpoints
         """
         self.engine.run(self.task, automated_login_sites=self.automated_login_sites)
-
-
-a = CLIMain()
-a.cli_sync_run()
