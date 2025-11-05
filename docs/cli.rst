@@ -176,6 +176,14 @@ When you run ``pyba database``, additional flags are required/available for data
 
   * ``postgres`` SSL mode: ``disabled`` (default) or ``required``.
 
+* ``--generate-code``
+
+  * The ``script generation`` flag: If enabled, it generates a playwright script that correctly performs the same task as the model without using any more of your tokens (if you need to perform tasks repeatedly)
+
+* ``--code-output-path``
+
+  * The ``output path`` for the generated code. If not specified, this defaults to ``/tmp/pyba_script.py``
+
 .. tip::
 
    The parser validates the engine value — if you pass an unsupported engine the CLI will exit with an error message.
@@ -194,7 +202,7 @@ Typical environment variables (example if you need to visit instagram and facebo
     export instagram_username=your_username
     export instagram_password=supersecurepassword
 
-    export facebook_username=you@domain.com
+    export facebook_username=youandyouonly
     export facebook_password=anotherpass
 
 Use your shell's secure mechanism to store API keys & passwords. Avoid placing secrets in shell history or in plain text files.
@@ -237,7 +245,9 @@ Below is the monolithic command you provided, split into clear steps and explain
       --trace-save-dir "/tmp/pyba_traces" \
       -v \
       -L instagram \
-      -L amazon
+      -L amazon \
+      --generate-code \
+      --code-output-path "/tmp/script.py"
 
 **What each flag does in this command:**
 
@@ -248,6 +258,8 @@ Below is the monolithic command you provided, split into clear steps and explain
 * ``--enable-tracing`` + ``--trace-save-dir`` — Record a trace zipped to ``/tmp/pyba_traces`` for replaying in Playwright Trace Viewer. It can be used to create a script using the SDK (support for CLI coming soon!)
 * ``-v`` — Print verbose logs to the console.
 * ``-L instagram -L amazon`` — Instruct the login engine to attempt automated login for these sites (credentials must be set in env).
+* ``--generate-coode`` — Generate the automation script in sync playwright
+* ``--code-output-path`` — Save the automation script in the specified location at ``/tmp/script.py``
 
 ---
 
