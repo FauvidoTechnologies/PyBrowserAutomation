@@ -16,6 +16,9 @@ class CLIMain(ArgParser):
         self.database = self.initialise_database()
         self.initialise_engine()
 
+        self.generate_code = self.arguments.generate_code
+        self.code_output_path = self.arguments.code_output_path
+
     def initialise_database(self) -> Optional[Database]:
         """
         Helper function to generate and initialise the database
@@ -63,6 +66,8 @@ class CLIMain(ArgParser):
         The CLI run function which calls the main runner with the instantiated arguments
         """
         self.engine.sync_run(self.task, automated_login_sites=self.automated_login_sites)
+        if self.generate_code:
+            self.engine.generate_code(output_path=self.code_output_path)
 
     def cli_async_run(self):
         """

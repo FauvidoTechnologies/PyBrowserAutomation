@@ -195,6 +195,20 @@ class ArgParser(ArgumentParser):
             dest="postgres_ssl_mode",
             help="The ssl_mode for running PostgreSQL databases. Can be disable or required, defaults at disabled",
         )
+        database_mode.add_argument(
+            "--generate-code",
+            action="store_true",
+            default=False,
+            dest="generate_code",
+            help="Use the stored actions to generate an automation script",
+        )
+        database_mode.add_argument(
+            "--code-output-path",
+            action="store",
+            default=None,
+            dest="code_output_path",
+            help="The file destination for the output path of the generated code. Defaults at `/tmp/script.py`",
+        )
 
     def initialise_arguments(self):
         """
@@ -221,5 +235,12 @@ class ArgParser(ArgumentParser):
             if options.database_engine not in ["sqlite", "mysql", "postgres"]:
                 print("Wrong database engine chosen. Please choose from sqlite, mysql or postgres")
                 sys.exit(0)
+
+            if not options.code_output_path:
+                # Default save to /tmp/pyba_script.py
+                options.code_output_path = "/tmp/pyba_script.py"
+                print(
+                    "Output path not specified, the generated script will be saved at /tmp/pyba_script.py"
+                )
 
         self.arguments = options
