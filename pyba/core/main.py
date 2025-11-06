@@ -31,6 +31,7 @@ class Engine:
         openai_api_key: str = None,
         vertexai_project_id: str = None,
         vertexai_server_location: str = None,
+        gemini_api_key: str = None,
         headless: bool = config["main_engine_configs"]["headless_mode"],
         handle_dependencies: bool = config["main_engine_configs"]["handle_dependencies"],
         use_logger: bool = config["main_engine_configs"]["use_logger"],
@@ -40,16 +41,17 @@ class Engine:
     ):
         """
         Args:
-            openai_api_key: API key for OpenAI models should you want to use that
-            vertexai_project_id: Create a VertexAI project to use that instead of OpenAI
-            vertexai_server_location: VertexAI server location
-            headless: Choose if you want to run in the headless mode or not
-            use_logger: Choose if you want to use the logger (that is enable logging of data)
-            handle_dependencies: Choose if you want to automatically install dependencies during runtime
-            enable_tracing: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
-            trace_save_directory: The directory where you want the .zip file to be saved
+            `openai_api_key`: API key for OpenAI models should you want to use that
+            `vertexai_project_id`: Create a VertexAI project to use that instead of OpenAI
+            `vertexai_server_location`: VertexAI server location
+            `gemini_api_key`: API key for Gemini-2.5-pro native support without VertexAI
+            `headless`: Choose if you want to run in the headless mode or not
+            `use_logger`: Choose if you want to use the logger (that is enable logging of data)
+            `handle_dependencies`: Choose if you want to automatically install dependencies during runtime
+            `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
+            `trace_save_directory`: The directory where you want the .zip file to be saved
 
-            database: An instance of the Database class which will define all database specific configs
+            `database`: An instance of the Database class which will define all database specific configs
 
         Find these default values at `pyba/config.yaml`
         """
@@ -74,6 +76,7 @@ class Engine:
 
         provider_instance = Provider(
             openai_api_key=openai_api_key,
+            gemini_api_key=gemini_api_key,
             vertexai_project_id=vertexai_project_id,
             vertexai_server_location=vertexai_server_location,
             logger=self.log,
@@ -82,6 +85,7 @@ class Engine:
         self.provider = provider_instance.provider
         self.model = provider_instance.model
         self.openai_api_key = provider_instance.openai_api_key
+        self.gemini_api_key = provider_instance.gemini_api_key
         self.vertexai_project_id = provider_instance.vertexai_project_id
         self.location = provider_instance.location
 

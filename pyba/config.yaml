@@ -24,6 +24,9 @@ main_engine_configs:
   openai:
     provider: "openai"
     model: "gpt-4o"
+  gemini:
+    provider: "gemini"
+    model: "gemini-2.5-pro"
 
 automated_login_configs:
   facebook:

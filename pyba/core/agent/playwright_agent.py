@@ -107,7 +107,7 @@ class PlaywrightAgent:
             elif agent_type == "output":
                 return str(parsed_json.get("output"))
 
-        else:  # VertexAI logic
+        elif self.engine.provider == "vertexai":  # VertexAI logic
             response = agent.send_message(prompt)
             try:
                 parsed_object = getattr(
@@ -130,6 +130,22 @@ class PlaywrightAgent:
 
             except Exception as e:
                 print(f"Unable to parse the output from VertexAI response: {e}")
+
+        else:  # Using gemini
+            gemini_config = {
+                "response_mime_type": "application/json",
+                "response_json_schema": agent["response_format"].model_json_schema(),
+                "system_instruction": agent["system_instruction"],
+            }
+
+            response = agent["client"].models.generate_content(
+                model=agent["model"],
+                contents=prompt,
+                config=gemini_config,
+            )
+
+            action = agent["response_format"].model_validate_json(response.text)
+            return action.actions[0]
 
     def process_action(
         self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str
