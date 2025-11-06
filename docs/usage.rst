@@ -18,7 +18,15 @@ Usage Guide
 Quickstart
 ----------
 
-Below is a quickstart guide to start using PyBA.
+Below is a quickstart guide to start using PyBA. It supports multiple LLM providers like:
+
+* VertexAI
+* OpenAI
+* Google (Gemini)
+
+.. tip::
+   
+   All the operations mentioned below can be performed using any of the above providers
 
 .. code-block:: python
 
@@ -29,6 +37,9 @@ Below is a quickstart guide to start using PyBA.
 
    # If OpenAI
    agent = Engine(openai_api_key="")
+
+   # If Gemini
+   agent = Engine(gemini_api_key="")
    agent.sync_run("Go to twitter and search for 'cybersecurity news'")
 
 
@@ -40,7 +51,7 @@ or you can save the output from the automation to use later in your code:
 
    # If OpenAI
    agent = Engine(openai_api_key="")
-   output = agent.async_run(prompt="Login to my instagram and give me all the IDs present in my feed", automated_login_sites=["instagram"]) # More details on `automated_login_sites` later
+   output = agent.sync_run(prompt="Login to my instagram and give me all the IDs present in my feed", automated_login_sites=["instagram"]) # More details on `automated_login_sites` later
 
    print(output)
 

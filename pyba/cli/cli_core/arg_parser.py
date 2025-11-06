@@ -55,6 +55,14 @@ class ArgParser(ArgumentParser):
         )
 
         base_parser.add_argument(
+            "--gemini-api-key",
+            action="store",
+            default=None,
+            dest="gemini_api_key",
+            help="Gemini API key if you wish to run the automations using Gemini-2.5-pro without using VertexAI",
+        )
+
+        base_parser.add_argument(
             "--headless",
             action="store_true",
             default=False,

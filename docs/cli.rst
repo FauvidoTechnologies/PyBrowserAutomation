@@ -108,6 +108,11 @@ Below are flags defined on the ``base_parser`` (available to both ``normal`` and
 
   * The region for VertexAI model serving (for example: ``us-central1``).
 
+* ``--gemini-api-key``
+  
+  * Use this to run automations with Gemini-2.5-pro without VertexAI.
+  * If provided, the tool will use Gemini for LLM-driven decisions.
+
 * ``--headless``
 
   * Run playwright in headless mode (no GUI). Common for servers/containers.
@@ -338,17 +343,27 @@ Credentials not being read
       -v --enable-tracing --trace-save-dir /tmp/pyba_traces --handle-deps \
       --openai-api-key ""
 
+Or using gemini's API key:
+
+.. code-block:: bash
+  
+    pyba database -e sqlite -n /tmp/pyba.db \
+      -t "search amazon.in for birthday gifts for my mom" \
+      -v --enable-tracing --trace-save-dir /tmp/pyba_traces --handle-deps \
+      --gemini-api-key ""
+
 **Database mode — Postgres example (remote DB):**
 
 .. code-block:: bash
 
     pyba database -e postgres -n pyba_db -u dbuser -p "dbpass" -H 192.168.1.10 -P 5432 -t "task here" --openai-api-key ""
 
-**Use OpenAI instead of VertexAI:**
+**Use Gemini instead of OpenAI:**
 
 .. code-block:: bash
-
-    pyba database -e sqlite -n /tmp/pyba.db -t "task here" --openai-api-key "$OPENAI_API_KEY"
+    
+    export GEMINI_API_KEY=""
+    pyba database -e sqlite -n /tmp/pyba.db -t "task here" --gemini-api-key "$GEMINI_API_KEY"
 
 ---
 
