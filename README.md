@@ -11,6 +11,12 @@ This is a no-code browser automation software written in python. It can visit an
 - Stealth mode and config heavy files for custom bypass laws
 - `Quick login` to social media sites **without passing credentials** to the LLM
 
+---
+
+If the software has helped, consider giving us a star 🌟!
+
+---
+
 ## Idea
 
 This library will allow you to run an inhouse playwright instance and automate any task. These tasks can be related to web-scraping, OSINT (OpenSource INTelligence) etc.
@@ -62,6 +68,11 @@ engine = Engine(vertexai_project_id="", vertexai_server_location="", handle_depe
 engine = Engine(openai_api_key="", handle_dependencies=False)
 ```
 
+> For Gemini (without VertexAI)
+```python3
+engine = Engine(gemini_api_key="")
+```
+
 - Set `handle_dependencies` to `True` if you're running this for the first time and install the playwright browsers and other dependencies by following the instructions.
 
 - Run the `sync` endpoint using `engine.sync_run()`
@@ -71,7 +82,3 @@ engine.sync_run(prompt="open instagram")
 ```
 
 For more use cases, check out the [evals](./automation_eval) direcrtory.
-
----
-
-If the software has helped, consider giving us a star!
