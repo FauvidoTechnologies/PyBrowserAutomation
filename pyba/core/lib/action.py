@@ -1,4 +1,5 @@
 import asyncio
+import re
 from urllib.parse import urljoin
 
 from playwright._impl._errors import Error
@@ -102,10 +103,21 @@ class PlaywrightActionPerformer:
         - We first check if the click element is actually an <a> tag
         - Or if it has a closest ancestory <a> tag
 
+        TODO: MAKE THIS CLEANER
+
         In either case we extract the href from that <a> tag and directly goto that
         """
         click_target = self.action.click
         if click_target is None:
+            return
+
+        # Patch: for absolute URLs
+        # If the click string contains a full URL, just extract and goto it.
+        url_match = re.search(r"https?://[^\s'\"]+", click_target)
+        if url_match:
+            href = url_match.group(0)
+            await self.page.goto(href)
+            await self.page.wait_for_load_state("domcontentloaded")
             return
 
         locator = self.page.locator(click_target)
@@ -145,6 +157,7 @@ class PlaywrightActionPerformer:
                 href = urljoin(base_url, href)
             await self.page.goto(href)
             await self.page.wait_for_load_state("domcontentloaded")
+            return
         else:
             try:
                 await locator.click(timeout=5000)
