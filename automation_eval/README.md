@@ -2,6 +2,10 @@
 
 This directory is to hold all the prompts and their tracebacks that `pyba` has been evaluated with.
 
+## Threaded executions
+
+Head over to [threaded](https://github.com/fauvidoTechnologies/PyBrowserAutomation/automation_eval/threaded) directory for example on parallel execution of multiple tasks
+
 ## Level 1: Simple Navigation & Interaction
 
 Focus: Single-page navigation, simple element actions
