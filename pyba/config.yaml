@@ -36,6 +36,8 @@ automated_login_configs:
     username_selector: 'input[name="email"]'
     password_selector: 'input[name="pass"]'
     submit_selector: 'button[type="submit"]'
+    uses_2FA: False
+    2FA_wait_value: null
   instagram:
     urls:
       - "https://www.instagram.com/accounts/login/"
@@ -53,6 +55,8 @@ automated_login_configs:
     additional_args:
       additional_selector_1: 'text="Not now"'
       additional_selector_2: 'text="OK"'
+    uses_2FA: False
+    2FA_wait_value: null
   gmail:
     urls:
       - "https://accounts.google.com/"
@@ -63,7 +67,7 @@ automated_login_configs:
     fall_back:
       password_selector: 'input[name="password"]'
     uses_2FA: True
-    2FA_wait_value: "mail\\.google\\.com"
+    2FA_wait_value: "mail.google.com" # Using regexes is not a good idea for URLs
 
 database:
 #   sqlite:

@@ -1,4 +1,6 @@
+import asyncio
 import os
+import urllib.parse
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -29,7 +31,8 @@ class FacebookLogin:
         if self.username is None or self.password is None:
             raise CredentialsnotSpecified(self.engine_name)
 
-        self.uses_2FA = False
+        self.uses_2FA = config["uses_2FA"]
+        self.final_2FA_url = config["final_2FA_url"]
 
     async def run(self) -> Optional[bool]:
         """
@@ -60,5 +63,19 @@ class FacebookLogin:
         except Exception:
             # It's fine, we'll assume that the login worked nicely
             pass
+
+        if self.uses_2FA:
+            # Blocking wait until user enters the 2FA password
+            while True:
+                current_url = self.page.url
+                hostname = urllib.parse.urlparse(current_url).hostname or ""
+
+                if hostname.endswith(
+                    self.final_2FA_url
+                ):  # Only when we reach the required domain name, we'll break
+                    break
+
+                # Continous polling, not the best way but works for now
+                await asyncio.sleep(1)
 
         return True

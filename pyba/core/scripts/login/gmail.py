@@ -1,5 +1,6 @@
+import asyncio
 import os
-import re
+import urllib.parse
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -31,7 +32,7 @@ class GmailLogin:
             raise CredentialsnotSpecified(self.engine_name)
 
         self.uses_2FA = config["uses_2FA"]
-        self.final_2FA_url = re.compile(config["2FA_wait_value"])
+        self.final_2FA_url = config["2FA_wait_value"]
 
     async def run(self) -> Optional[bool]:
         """
@@ -84,9 +85,16 @@ class GmailLogin:
             pass
 
         if self.uses_2FA:
-            # In this case, wait for the user to authenticate manually before resuming automation again
-            await self.page.wait_for_url(
-                self.final_2FA_url
-            )  # Waiting for the page to contain 'mail.google.com'
+            # Blocking wait until user enters the 2FA password
+            while True:
+                current_url = self.page.url
+                hostname = urllib.parse.urlparse(current_url).hostname or ""
 
+                if hostname.endswith(
+                    self.final_2FA_url
+                ):  # Only when we reach the required domain name, we'll break
+                    break
+
+                # Continous polling, not the best way but works for now
+                await asyncio.sleep(1)
         return True
