@@ -29,7 +29,7 @@ Features
 * The automation script generatation based on tracked logs for repeatable use and accurate sources
 * CLI support for running in Terminal without a script
 
-The current software version is ``0.2.2`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
+The current software version is ``0.2.3`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
 
 .. toctree::
    :maxdepth: 2
