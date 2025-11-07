@@ -37,7 +37,7 @@ class InstagramLogin:
             raise CredentialsnotSpecified(self.engine_name)
 
         self.uses_2FA = config["uses_2FA"]
-        self.final_2FA_url = config["final_2FA_url"]
+        self.final_2FA_url = config["2FA_wait_value"]
 
     async def run(self) -> Optional[bool]:
         """
