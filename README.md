@@ -11,6 +11,7 @@ This is a no-code browser automation software written in python. It can visit an
 - Stealth mode and config heavy files for custom bypass laws
 - `Quick login` to social media sites **without passing credentials** to the LLM
 - `Thread` safe for multiple tasks in parallel.
+- `specialized` extracted for sites like YouTube.
 
 For examples on each of these features, checkout the [eval](./automation_eval) directory.
 
