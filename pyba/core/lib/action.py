@@ -250,10 +250,25 @@ class PlaywrightActionPerformer:
     # Handle Javascript functions
     # ---------------------------
     async def handle_evaluate_js(self):
+        """
+        Handles the evaluation of Javascript in the browser enviornement
+        and brings the result back to the code
+
+        This is the recommended way to using it.
+        ```js
+        const href = await page.evaluate(() => document.location.href);
+        ```evaluate_js
+
+        We strip the js snippet here for any return statements because those
+        aren't required for inline functions.
+        """
+
+        if self.action.evaluate_js.startswith("return"):
+            self.action.evaluate_js = " ".join(self.action.evaluate_js.split(" ")[1:])
         result = await self.page.evaluate(self.action.evaluate_js)
 
         # Letting this be here for debugging
-        print("[JS Evaluation Result]:", result)
+        # print("[JS Evaluation Result]:", result)
         return result
 
     async def handle_screenshot(self):
