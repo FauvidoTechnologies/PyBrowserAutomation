@@ -27,9 +27,10 @@ Features
 * ``Stealth mode and config`` heavy files for custom bypass laws
 * Quick ``login to social media sites`` without passing credentials to the LLM
 * The automation script generatation based on tracked logs for repeatable use and accurate sources
-* CLI support for running in Terminal without a script
+* CLI support for running in ``Terminal`` without a script
+* ``Exponential backoff`` and retry for API errors to make the automation more robust
 
-The current software version is ``0.2.3`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
+The current software version is ``0.2.4`` which is NOT fully ready and under heavy developement. The first release is scheduled for ``Dec 2025``!
 
 .. toctree::
    :maxdepth: 2
