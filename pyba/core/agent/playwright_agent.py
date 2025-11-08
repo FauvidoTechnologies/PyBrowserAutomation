@@ -1,13 +1,15 @@
 import json
+import time
 from types import SimpleNamespace
 from typing import Dict, List, Union, Any
 
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.utils.prompts import general_prompt, output_prompt
+from pyba.utils.retry import Retry
 from pyba.utils.structure import PlaywrightResponse
 
 
-class PlaywrightAgent:
+class PlaywrightAgent(Retry):
     """
     Defines the playwright agent's actions
 
@@ -23,6 +25,8 @@ class PlaywrightAgent:
 
         Initialises the agents using the `.get_agent()` entrypoint from the LLMFactory
         """
+        super().__init__()  # Initiaising the retry variables
+        self.attempt_number = 1
         self.engine = engine
         self.llm_factory = LLMFactory(engine=self.engine)
 
@@ -84,6 +88,8 @@ class PlaywrightAgent:
 
         Returns:
             The parsed response (SimpleNamespace for action, str for output)
+
+        Uses the attempt_number to give ou
         """
         if self.engine.provider == "openai":
             arguments = self._initialise_openai_arguments(
@@ -92,12 +98,18 @@ class PlaywrightAgent:
                 model_name=agent["model"],
             )
 
-            # Call the OpenAI API
-            # NOTE: This fixes a bug. The key is "response_format",
-            # not "output_response_format".
-            response = agent["client"].chat.completions.parse(
-                **arguments, response_format=agent["response_format"]
-            )
+            while True:
+                try:
+                    response = agent["client"].chat.completions.parse(
+                        **arguments, response_format=agent["response_format"]
+                    )
+                    self.attempt_number = 1
+                    break
+                except Exception:
+                    # If we hit a rate limit, calculate the time to wait and retry
+                    wait_time = self.calculate_next_time(self.attempt_number)
+                    time.sleep(wait_time)  # wait_time is in seconds
+                    self.attempt_number += 1
 
             parsed_json = json.loads(response.choices[0].message.content)
 
@@ -108,7 +120,16 @@ class PlaywrightAgent:
                 return str(parsed_json.get("output"))
 
         elif self.engine.provider == "vertexai":  # VertexAI logic
-            response = agent.send_message(prompt)
+            while True:
+                try:
+                    response = agent.send_message(prompt)
+                    self.attempt_number = 1
+                    break
+                except Exception:
+                    wait_time = self.calculate_next_time(self.attempt_number)
+                    time.sleep(wait_time)
+                    self.attempt_number += 1
+
             try:
                 parsed_object = getattr(
                     response, "output_parsed", getattr(response, "parsed", None)
@@ -138,11 +159,19 @@ class PlaywrightAgent:
                 "system_instruction": agent["system_instruction"],
             }
 
-            response = agent["client"].models.generate_content(
-                model=agent["model"],
-                contents=prompt,
-                config=gemini_config,
-            )
+            while True:
+                try:
+                    response = agent["client"].models.generate_content(
+                        model=agent["model"],
+                        contents=prompt,
+                        config=gemini_config,
+                    )
+                    self.attempt_number = 1
+                    break
+                except Exception:
+                    wait_time = self.calculate_next_time(self.attempt_number)
+                    time.sleep(wait_time)
+                    self.attempt_number += 1
 
             action = agent["response_format"].model_validate_json(response.text)
             return action.actions[0]
