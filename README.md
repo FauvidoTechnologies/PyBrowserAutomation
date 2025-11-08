@@ -82,7 +82,8 @@ engine = Engine(gemini_api_key="")
 - Run the `sync` endpoint using `engine.sync_run()`
 
 ```python3
-engine.sync_run(prompt="open instagram")
+output = engine.sync_run(prompt="open my instagram, tell me who has posted what and who all have put up stories", automated_login_sites=["instagram"])		# Read about the automated login sites in the docs
+print(output)
 ```
 
 For more use cases, check out the [evals](./automation_eval) direcrtory.
