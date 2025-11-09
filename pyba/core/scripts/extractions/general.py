@@ -5,6 +5,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 
+from pyba.logger import get_logger
 from pyba.utils.common import url_entropy
 from pyba.utils.load_yaml import load_config
 from pyba.utils.structure import CleanedDOM
@@ -47,6 +48,7 @@ class GeneralDOMExtraction:
         self.elements = elements
         self.base_url = base_url
 
+        self.log = get_logger()
         self.clickable_fields_flag = clickable_fields_flag
         # For testing fields
         self.test_value = general_config["main_engine_configs"]["input_field_test_value"]
@@ -294,7 +296,7 @@ class GeneralDOMExtraction:
             cleaned_dom.hyperlinks = self._extract_href()
         except Exception as e:
             cleaned_dom.hyperlinks = []
-            print(f"Failed to extract hyperlinks: {e}")
+            self.log.error(f"Failed to extract hyperlinks: {e}")
 
         try:
             if self.clickable_fields_flag:
@@ -305,18 +307,18 @@ class GeneralDOMExtraction:
                 # There has to be a better way to do this!
         except Exception as e:
             cleaned_dom.clickable_fields = []
-            print(f"Failed to extract clickables: {e}")
+            self.log.error(f"Failed to extract clickables: {e}")
 
         try:
             cleaned_dom.actual_text = await self._extract_all_text()
         except Exception as e:
             cleaned_dom.actual_text = []
-            print(f"Failed to extract text: {e}")
+            self.log.error(f"Failed to extract text: {e}")
 
         try:
             cleaned_dom.input_fields = await self._extract_input_fields()
         except Exception as e:
             cleaned_dom.input_fields = []
-            print(f"Failed to extract input fields: {e}")
+            self.log.error(f"Failed to extract input fields: {e}")
 
         return cleaned_dom

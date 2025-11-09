@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from typing import Dict, List, Union, Any
 
 from pyba.core.agent.llm_factory import LLMFactory
+from pyba.logger import get_logger
 from pyba.utils.prompts import general_prompt, output_prompt
 from pyba.utils.retry import Retry
 from pyba.utils.structure import PlaywrightResponse
@@ -30,6 +31,7 @@ class PlaywrightAgent(Retry):
         self.engine = engine
         self.llm_factory = LLMFactory(engine=self.engine)
 
+        self.log = get_logger()
         self.action_agent, self.output_agent = self.llm_factory.get_agent()
 
     def _initialise_prompt(
@@ -108,6 +110,9 @@ class PlaywrightAgent(Retry):
                 except Exception:
                     # If we hit a rate limit, calculate the time to wait and retry
                     wait_time = self.calculate_next_time(self.attempt_number)
+                    self.log.warning(
+                        f"Hit the rate limit for OpenAI, retrying in {wait_time} seconds"
+                    )
                     time.sleep(wait_time)  # wait_time is in seconds
                     self.attempt_number += 1
 
@@ -127,6 +132,9 @@ class PlaywrightAgent(Retry):
                     break
                 except Exception:
                     wait_time = self.calculate_next_time(self.attempt_number)
+                    self.log.warning(
+                        f"Hit the rate limit for VertexAI, retrying in {wait_time} seconds"
+                    )
                     time.sleep(wait_time)
                     self.attempt_number += 1
 
@@ -136,7 +144,7 @@ class PlaywrightAgent(Retry):
                 )
 
                 if not parsed_object:
-                    print("No parsed object found in VertexAI response.")
+                    self.log.error("No parsed object found in VertexAI response.")
                     return None
 
                 # Parse based on agent type
@@ -150,7 +158,7 @@ class PlaywrightAgent(Retry):
                     raise IndexError("No 'output' found in VertexAI response.")
 
             except Exception as e:
-                print(f"Unable to parse the output from VertexAI response: {e}")
+                self.log.error(f"Unable to parse the output from VertexAI response: {e}")
 
         else:  # Using gemini
             gemini_config = {
@@ -170,6 +178,9 @@ class PlaywrightAgent(Retry):
                     break
                 except Exception:
                     wait_time = self.calculate_next_time(self.attempt_number)
+                    self.log.warning(
+                        f"Hit the rate limit for Gemini, retrying in {wait_time} seconds"
+                    )
                     time.sleep(wait_time)
                     self.attempt_number += 1
 

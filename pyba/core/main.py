@@ -13,7 +13,7 @@ from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
 from pyba.database import Database, DatabaseFunctions
-from pyba.logger import get_logger
+from pyba.logger import get_logger, setup_logger
 from pyba.utils.common import initial_page_setup
 from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen, DatabaseNotInitialised
 from pyba.utils.load_yaml import load_config
@@ -64,8 +64,9 @@ class Engine:
         self.database = database
         self.db_funcs = DatabaseFunctions(self.database) if database else None
 
-        # Initialising the loggering depending on whether the use_logger boolean is on
-        self.log = get_logger(use_logger=use_logger)
+        # A global setup for the logger so others can directly import and use
+        setup_logger(use_logger=use_logger)
+        self.log = get_logger()
 
         self.automated_login_engine_classes = []
 
@@ -79,7 +80,6 @@ class Engine:
             gemini_api_key=gemini_api_key,
             vertexai_project_id=vertexai_project_id,
             vertexai_server_location=vertexai_server_location,
-            logger=self.log,
         )
 
         self.provider = provider_instance.provider

@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from pyba.database.mysql import MySQLHandler
 from pyba.database.postgres import PostgresHandler
 from pyba.database.sqlite import SQLiteHandler
+from pyba.logger import get_logger
 from pyba.utils.load_yaml import load_config
 
 config = load_config("general")["database"]
@@ -57,6 +58,7 @@ class Database:
         > This engine is the recommended way to define the database structure
         """
         self.engine: str = engine or config["engine"]
+        self.log = get_logger()
 
         self.name: str = name or config["name"]
         self.host: str = host or config["host"]
@@ -115,7 +117,7 @@ class Database:
             return Session()
         except Exception as e:
             # We might get an OperationalError here if the DB doesn't exist yet
-            print(f"Couldn't create a connection to the database: {e}")
+            self.log.error(f"Couldn't create a connection to the database: {e}")
             return False
 
     def initialise_tables_and_database(self):
@@ -131,23 +133,4 @@ class Database:
         HandlerClass = handler_map.get(self.engine)
         handler = HandlerClass(database_engine_configs=self)
         handler.setup()
-        print(f"Database setup for {self.engine} complete.")
-
-
-"""
-Example:
-
-from pyba import Engine, Database
-
-database = Database(engine="sqlite", name="/tmp/pyba/pyba.db")
-engine = Engine(openai_api_key=os.getenv("openai_api_key"), use_logger=True, handle_dependencies=False, enable_tracing=True, database=database)
-
-output = engine.sync_run(prompt="go to workflow and download my gradecard", automated_login_sites=["workflow_iitm"])
-
-print(f"This is my gradecard details: {output}")
-
-val = engine.save_code(save_path="/tmp/pyba/automation_code.py")
-
-if val:
-	print("Automation code saved at /tmp/pyba/automation_code.py")
-"""
+        self.log.success(f"Database setup for {self.engine} complete.")

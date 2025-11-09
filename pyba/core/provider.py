@@ -1,3 +1,4 @@
+from pyba.logger import get_logger
 from pyba.utils.exceptions import ServiceNotSelected, ServerLocationUndefined
 from pyba.utils.load_yaml import load_config
 
@@ -15,7 +16,6 @@ class Provider:
         gemini_api_key: str = None,
         vertexai_project_id: str = None,
         vertexai_server_location: str = None,
-        logger=None,
     ):
         """
         Args:
@@ -32,7 +32,7 @@ class Provider:
         self.gemini_api_key: str | None = gemini_api_key
         self.location: str | None = vertexai_server_location
 
-        self.log = logger
+        self.log = get_logger()
 
         self.handle_keys()
 

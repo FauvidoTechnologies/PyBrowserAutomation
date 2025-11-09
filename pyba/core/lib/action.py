@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from playwright._impl._errors import Error
 from playwright.async_api import Page
 
+from pyba.logger import get_logger
 from pyba.utils.common import is_absolute_url
 from pyba.utils.structure import PlaywrightAction
 
@@ -60,6 +61,8 @@ class PlaywrightActionPerformer:
     def __init__(self, page: Page, action: PlaywrightAction):
         self.page = page
         self.action = action
+
+        self.log = get_logger()
 
     # -----------------
     # Handle nagivation
@@ -268,7 +271,7 @@ class PlaywrightActionPerformer:
         result = await self.page.evaluate(self.action.evaluate_js)
 
         # Letting this be here for debugging
-        # print("[JS Evaluation Result]:", result)
+        self.log.info("[JS Evaluation Result]:", result)
         return result
 
     async def handle_screenshot(self):
@@ -279,7 +282,7 @@ class PlaywrightActionPerformer:
             await self.page.click(self.action.download_selector)
         download = await download_info.value
         path = await download.path()
-        print(f"Downloaded to: {path}")
+        self.log.info(f"Downloaded to: {path}")
 
     # -------------------
     # Handling new pages

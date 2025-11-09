@@ -44,14 +44,28 @@ class Logger:
         self._log("[ACTION] ", message, Fore.MAGENTA)
 
 
-def get_logger(use_logger: bool = False) -> Logger:
+# Private names cause we don't want modifications, not that it will happen
+# Initialising the logger
+_global_logger = Logger(use_logger=False)
+
+
+def setup_logger(use_logger: bool = False):
     """
-    Factory function to get a Logger instance.
+    Configures the global singleton logger instance.
+    This should be called once by the main Engine.
 
     Args:
         use_logger (bool): Flag to enable or disable logging.
+    """
+    global _global_logger
+    _global_logger = Logger(use_logger=use_logger)
+
+
+def get_logger() -> Logger:
+    """
+    Factory function to get the *global singleton* Logger instance.
 
     Returns:
-        Logger: An instance of the Logger class.
+        Logger: The one and only instance of the Logger class.
     """
-    return Logger(use_logger=use_logger)
+    return _global_logger

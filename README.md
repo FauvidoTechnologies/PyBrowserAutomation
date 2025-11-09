@@ -86,4 +86,13 @@ output = engine.sync_run(prompt="open my instagram, tell me who has posted what 
 print(output)
 ```
 
+or
+
+```python3
+output = engine.sync_run(prompt="visit the wikipedia page for quantum mechanics, and click the first hyperlink. Keep clicking the first hyperlink on the first paragraph, not the quoted text, until you reach the page for philosophy. Tell me how many pages it took")
+
+engine.generate_code(output_path="/tmp/script.py")	# Generates the entire script
+print(output)
+```
+
 For more use cases, check out the [evals](./automation_eval) direcrtory.
