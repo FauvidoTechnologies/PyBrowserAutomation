@@ -7,9 +7,20 @@ from google.genai.types import GenerateContentConfig
 # OpenAI
 from openai import OpenAI
 
+from pyba.utils.exceptions import IncorrectMode
 from pyba.utils.load_yaml import load_config
-from pyba.utils.prompts import system_instruction, output_system_instruction
-from pyba.utils.structure import PlaywrightResponse, OutputResponseFormat
+from pyba.utils.prompts import (
+    system_instruction,
+    output_system_instruction,
+    BFS_planner_system_instruction,
+    DFS_planner_system_instruction,
+)
+from pyba.utils.structure import (
+    PlaywrightResponse,
+    OutputResponseFormat,
+    PlannerAgentOutputBFS,
+    PlannerAgentOutputDFS,
+)
 
 config = load_config("general")
 
@@ -41,6 +52,8 @@ class LLMFactory:
             self.vertexai_client = self._initialize_vertexai_client()
         else:
             self.gemini_client = self._initialize_gemini_client()
+
+        self.mode = self.engine.mode  # Mode of operation for Exploratory, DFS|BFS
 
     def _initialize_vertexai_client(self):
         """
@@ -150,6 +163,29 @@ class LLMFactory:
 
         return (action_agent, output_agent)
 
+    def create_planner_agent(self, init_method):
+        """
+        Helper function to return the appropriate planner agent
+
+        Args:
+            `init_method`: Function to initialise the respective LLM agent
+
+        Returns:
+            A planner agent instance
+        """
+        if self.mode == "BFS":
+            system_instruction = BFS_planner_system_instruction
+            response_schema = PlannerAgentOutputBFS
+        else:
+            system_instruction = DFS_planner_system_instruction
+            response_schema = PlannerAgentOutputDFS
+
+        planner_agent = init_method(
+            system_instruction=system_instruction, response_schema=response_schema
+        )
+
+        return planner_agent
+
     def get_agent(self) -> Tuple:
         """
         Endpoint to return the agents depending on the LLM called for
@@ -158,10 +194,40 @@ class LLMFactory:
                 A tuple containing the main agent and the output agent for a particular provider
         """
         if self.engine.provider == "openai":
-            agents = self.create_agentic_pair(self._initialize_openai_agent)
+            init_method = self._initialize_openai_agent
         elif self.engine.provider == "vertexai":
-            agents = self.create_agentic_pair(self._initialize_vertexai_agent)
+            init_method = self._initialize_vertexai_agent
         else:
-            agents = self.create_agentic_pair(self._initialize_gemini_agent)
+            init_method = self._initialize_gemini_agent
+
+        agents = self.create_agentic_pair(init_method)
 
         return agents
+
+    def get_planner_agent(self):
+        """
+        Endpoint to return the planner agent depending on the LLM called for. If
+        this endpoint is called, the mode must be specified correctly.
+
+        Args:
+            `mode`: DFS|BFS. Both these modes have their own system prompts.
+
+        The mode must be specified. If mode is None, then planner-agent shouldn't be called.
+
+        Returns:
+            A single agent for a particular provider
+        """
+
+        if self.mode not in ("BFS", "DFS"):
+            raise IncorrectMode(mode=self.mode)
+
+        if self.engine.provider == "openai":
+            init_method = self._initialize_openai_agent
+        elif self.engine.provider == "vertexai":
+            init_method = self._initialize_vertexai_agent
+        else:
+            init_method = self._initialize_gemini_agent
+
+        planner_agent = self.create_planner_agent(init_method)
+
+        return planner_agent

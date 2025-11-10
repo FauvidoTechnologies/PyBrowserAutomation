@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PlaywrightAction(BaseModel):
@@ -93,3 +93,23 @@ class CleanedDOM:
             "current_url": self.current_url,
             "youtube": self.youtube,
         }
+
+
+class PlannerAgentOutputBFS(BaseModel):
+    """
+    BFS planner agent output
+    """
+
+    plans: List[str] = Field(
+        ..., description="List of potential plans that can should be executed in parallel"
+    )
+
+
+class PlannerAgentOutputDFS(BaseModel):
+    """
+    DFS planner agent output
+    """
+
+    plan: str = Field(
+        ..., description="A single plan to be executed in depth to achieve the required goal"
+    )

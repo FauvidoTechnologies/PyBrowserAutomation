@@ -1,11 +1,11 @@
 import asyncio
 import uuid
-from typing import List, Union
+from typing import List, Union, Literal
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
-from pyba.core.agent.playwright_agent import PlaywrightAgent
+from pyba.core.agent import PlaywrightAgent, PlannerAgent
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration
@@ -33,6 +33,7 @@ class Engine:
         vertexai_server_location: str = None,
         gemini_api_key: str = None,
         headless: bool = config["main_engine_configs"]["headless_mode"],
+        mode: Literal["DFS", "BFS"] = None,
         handle_dependencies: bool = config["main_engine_configs"]["handle_dependencies"],
         use_logger: bool = config["main_engine_configs"]["use_logger"],
         enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
@@ -46,8 +47,9 @@ class Engine:
             `vertexai_server_location`: VertexAI server location
             `gemini_api_key`: API key for Gemini-2.5-pro native support without VertexAI
             `headless`: Choose if you want to run in the headless mode or not
-            `use_logger`: Choose if you want to use the logger (that is enable logging of data)
+            `mode`: Mode of operation for exploratory analysis, can be either DFS or BFS
             `handle_dependencies`: Choose if you want to automatically install dependencies during runtime
+            `use_logger`: Choose if you want to use the logger (that is enable logging of data)
             `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
             `trace_save_directory`: The directory where you want the .zip file to be saved
 
@@ -59,6 +61,8 @@ class Engine:
         self.headless_mode = headless
         self.tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
+
+        self.mode = mode  # mode for exploratory analysis
 
         # Handle database instances using `db_funcs`
         self.database = database
@@ -91,6 +95,10 @@ class Engine:
 
         # Defining the playwright agent with the defined configs
         self.playwright_agent = PlaywrightAgent(engine=self)
+
+        if self.mode:
+            # If mode is not None, call the planner agent
+            self.planner_agent = PlannerAgent(engine=self)
 
     @staticmethod
     def handle_dependencies(handle_dependencies: bool):

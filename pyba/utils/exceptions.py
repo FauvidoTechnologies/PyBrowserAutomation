@@ -57,3 +57,14 @@ class DatabaseNotInitialised(Exception):
         super().__init__(
             "Tried to call for code-generation without logging in a database! Please initialise the database."
         )
+
+
+class IncorrectMode(Exception):
+    """
+    Exception to be raised when the mode specified by the user is incorrect
+    """
+
+    def __init__(self, mode: str):
+        super().__init__(
+            f"Mode {mode} is not supported. Please choose between DFS or BFS and enter as a string"
+        )
