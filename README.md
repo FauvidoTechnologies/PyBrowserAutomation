@@ -1,5 +1,7 @@
 # PyBA - Python Browser Automations
 
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/py-browser-automation?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/py-browser-automation)
+
 This is a no-code browser automation software written in python. It can visit any website, automate testing, repetitive tasks, form filling and more. This library is specifically built for more exploratory analysis than EXACT inputs (though it supports both through different modes).
 
 ## Features
