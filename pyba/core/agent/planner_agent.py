@@ -4,8 +4,12 @@ from typing import Union, Dict, List, Any
 
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.logger import get_logger
+from pyba.utils.load_yaml import load_config
+from pyba.utils.prompts import planner_general_prompt_DFS, planner_general_prompt_BFS
 from pyba.utils.retry import Retry
 from pyba.utils.structure import PlannerAgentOutputBFS, PlannerAgentOutputDFS
+
+config = load_config("general")["main_engine_configs"]
 
 
 class PlannerAgent(Retry):
@@ -32,6 +36,21 @@ class PlannerAgent(Retry):
         self.mode = self.engine.mode
 
         self.agent = self.llm_factory.get_planner_agent()
+
+        self.max_breadth = config["max_breadth"]
+        self.max_depth = config["max_depth"]
+
+    def _initialise_prompt(self, task: str):
+        """
+                Initialise the prompt for the planner agent
+
+        Args:
+                `task`: Task given by the user
+        """
+        if self.mode == "BFS":
+            return planner_general_prompt_BFS.format(task=task, max_plans=self.max_breadth)
+        else:
+            return planner_general_prompt_DFS.format(task=task)
 
     def _initialise_openai_arguments(
         self, system_instruction: str, task: str, model_name: str
@@ -76,7 +95,7 @@ class PlannerAgent(Retry):
         if self.engine.provider == "openai":
             arguments = self._initialise_openai_arguments(
                 system_instruction=agent["system_instruction"],
-                prompt=prompt,
+                task=prompt,
                 model_name=agent["model"],
             )
 
@@ -98,11 +117,14 @@ class PlannerAgent(Retry):
 
             parsed_json = json.loads(response.choices[0].message.content)
 
-            print(f"This is the response: {parsed_json}")
-            return parsed_json
+            if "plans" in list(parsed_json.keys()):
+                return parsed_json["plans"]
+            if "plan" in list(parsed_json.keys()):
+                return parsed_json["plan"]
+            self.log.error("Parsed object has neither 'plans' nor 'plan' attribute.")
+            return None
 
         elif self.engine.provider == "vertexai":  # VertexAI logic
-            print("inside the VertexAI guy")
             while True:
                 try:
                     response = agent.send_message(prompt)
@@ -115,7 +137,6 @@ class PlannerAgent(Retry):
                     )
                     time.sleep(wait_time)
                     self.attempt_number += 1
-            print(f"Got the response: {response}")
             try:
                 parsed_object = getattr(
                     response, "output_parsed", getattr(response, "parsed", None)
@@ -125,11 +146,18 @@ class PlannerAgent(Retry):
                     self.log.error("No parsed object found in VertexAI response.")
                     return None
 
-                print(f"This is the parsed_object: {parsed_object}")
-                return parsed_object
+                if hasattr(parsed_object, "plans"):
+                    return parsed_object.plans
+
+                if hasattr(parsed_object, "plan"):
+                    return parsed_object.plan
+
+                self.log.error("Parsed object has neither 'plans' nor 'plan' attribute.")
+                return None
 
             except Exception as e:
                 self.log.error(f"Unable to parse the output from VertexAI response: {e}")
+                return None
 
         else:  # Using gemini
             gemini_config = {
@@ -156,8 +184,16 @@ class PlannerAgent(Retry):
                     self.attempt_number += 1
 
             action = agent["response_format"].model_validate_json(response.text)
-            print(f"This is the action: {action}")
-            return action
+
+            if hasattr(action, "plan"):
+                return action.plan
+
+            elif hasattr(action, "plans"):
+                return action.plans
+
+            else:
+                self.log.error("Parsed object has neither 'plans' nor 'plan' attribute.")
+                return None
 
     def generate(self, task: str) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
         """
@@ -166,11 +202,9 @@ class PlannerAgent(Retry):
         Function:
             - Takes in the user prompt which serves as the task for the model to perform
             - Depending on DFS or BFS mode generates plan(s)
+
         # IDEALLY but I need to see what the response types are like first
         """
 
-        # WTF IS THIS?
-        prompt = f"given the action, come up with a plan: {task}"
-
-        output = self._call_model(agent=self.agent, prompt=prompt)
-        print(output)
+        prompt = self._initialise_prompt(task=task)
+        return self._call_model(agent=self.agent, prompt=prompt)

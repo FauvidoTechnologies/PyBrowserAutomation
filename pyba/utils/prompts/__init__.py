@@ -7,4 +7,6 @@ from pyba.utils.prompts.output_system_prompt import (
 from pyba.utils.prompts.planner_agent_prompt import (
     BFS_planner_system_instruction,
     DFS_planner_system_instruction,
+    planner_general_prompt_DFS,
+    planner_general_prompt_BFS,
 )

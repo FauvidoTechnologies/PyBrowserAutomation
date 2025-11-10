@@ -28,6 +28,10 @@ main_engine_configs:
     provider: "gemini"
     model: "gemini-2.5-pro"
 
+  # Depth and breadth parameters for the exploratory mode
+  max_depth: 5
+  max_breadth: 5
+
 automated_login_configs:
   facebook:
     urls:
