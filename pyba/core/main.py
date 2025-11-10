@@ -95,6 +95,7 @@ class Engine:
 
         # Defining the playwright agent with the defined configs
         self.playwright_agent = PlaywrightAgent(engine=self)
+        self.planner_agent = None
 
         if self.mode:
             # If mode is not None, call the planner agent
@@ -114,6 +115,8 @@ class Engine:
                 Right now we're assuming that the user's prompt is well defined. In later
                 versions we'll come up with a fix for that as well.
         """
+
+        # print(self.planner_agent.generate(task=prompt))
 
         if prompt is None:
             raise PromptNotPresent()

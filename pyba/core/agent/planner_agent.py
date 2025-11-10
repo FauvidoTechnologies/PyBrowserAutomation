@@ -1,4 +1,6 @@
-from typing import Union
+import json
+import time
+from typing import Union, Dict, List, Any
 
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.logger import get_logger
@@ -27,15 +29,148 @@ class PlannerAgent(Retry):
         self.llm_factory = LLMFactory(engine=self.engine)  # The engine variable holds the mode
 
         self.log = get_logger()
+        self.mode = self.engine.mode
 
         self.agent = self.llm_factory.get_planner_agent()
 
-    def generate(self) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
+    def _initialise_openai_arguments(
+        self, system_instruction: str, task: str, model_name: str
+    ) -> Dict[str, List[Dict[str, str]]]:
+        """
+        Initialises the arguments for OpenAI agents
+
+        Args:
+            `system_instruction`: The system instruction for the agent
+            `task`: The current task for the model to perform
+            `model_name`: The OpenAI model name
+
+        Returns:
+            An arguments dictionary which can be directly passed to OpenAI agents
+        """
+
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": task},
+        ]
+
+        kwargs = {
+            "model": model_name,
+            "messages": messages,
+        }
+
+        return kwargs
+
+    def _call_model(self, agent: Any, prompt: str) -> Any:
+        """
+        Generic method to call the correct LLM provider and parse the response.
+
+        Args:
+            agent: The agent to use (action_agent or output_agent)
+            prompt: The fully formatted prompt string
+
+        Returns:
+            The parsed response (SimpleNamespace for action, str for output)
+
+        Uses the attempt_number to give ou
+        """
+        if self.engine.provider == "openai":
+            arguments = self._initialise_openai_arguments(
+                system_instruction=agent["system_instruction"],
+                prompt=prompt,
+                model_name=agent["model"],
+            )
+
+            while True:
+                try:
+                    response = agent["client"].chat.completions.parse(
+                        **arguments, response_format=agent["response_format"]
+                    )
+                    self.attempt_number = 1
+                    break
+                except Exception:
+                    # If we hit a rate limit, calculate the time to wait and retry
+                    wait_time = self.calculate_next_time(self.attempt_number)
+                    self.log.warning(
+                        f"Hit the rate limit for OpenAI, retrying in {wait_time} seconds"
+                    )
+                    time.sleep(wait_time)  # wait_time is in seconds
+                    self.attempt_number += 1
+
+            parsed_json = json.loads(response.choices[0].message.content)
+
+            print(f"This is the response: {parsed_json}")
+            return parsed_json
+
+        elif self.engine.provider == "vertexai":  # VertexAI logic
+            print("inside the VertexAI guy")
+            while True:
+                try:
+                    response = agent.send_message(prompt)
+                    self.attempt_number = 1
+                    break
+                except Exception:
+                    wait_time = self.calculate_next_time(self.attempt_number)
+                    self.log.warning(
+                        f"Hit the rate limit for VertexAI, retrying in {wait_time} seconds"
+                    )
+                    time.sleep(wait_time)
+                    self.attempt_number += 1
+            print(f"Got the response: {response}")
+            try:
+                parsed_object = getattr(
+                    response, "output_parsed", getattr(response, "parsed", None)
+                )
+
+                if not parsed_object:
+                    self.log.error("No parsed object found in VertexAI response.")
+                    return None
+
+                print(f"This is the parsed_object: {parsed_object}")
+                return parsed_object
+
+            except Exception as e:
+                self.log.error(f"Unable to parse the output from VertexAI response: {e}")
+
+        else:  # Using gemini
+            gemini_config = {
+                "response_mime_type": "application/json",
+                "response_json_schema": agent["response_format"].model_json_schema(),
+                "system_instruction": agent["system_instruction"],
+            }
+
+            while True:
+                try:
+                    response = agent["client"].models.generate_content(
+                        model=agent["model"],
+                        contents=prompt,
+                        config=gemini_config,
+                    )
+                    self.attempt_number = 1
+                    break
+                except Exception:
+                    wait_time = self.calculate_next_time(self.attempt_number)
+                    self.log.warning(
+                        f"Hit the rate limit for Gemini, retrying in {wait_time} seconds"
+                    )
+                    time.sleep(wait_time)
+                    self.attempt_number += 1
+
+            action = agent["response_format"].model_validate_json(response.text)
+            print(f"This is the action: {action}")
+            return action
+
+    def generate(self, task: str) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
         """
         Endpoint to generate the plan(s) depending on the set mode (the agent encodes the mode)
 
         Function:
-                Takes in the user prompt which serves as the instruction for any future
+            - Takes in the user prompt which serves as the task for the model to perform
+            - Depending on DFS or BFS mode generates plan(s)
+        # IDEALLY but I need to see what the response types are like first
         """
 
-        pass
+        # WTF IS THIS?
+        prompt = f"given the action, come up with a plan: {task}"
+
+        output = self._call_model(agent=self.agent, prompt=prompt)
+        print(output)
