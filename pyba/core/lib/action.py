@@ -271,7 +271,7 @@ class PlaywrightActionPerformer:
         result = await self.page.evaluate(self.action.evaluate_js)
 
         # Letting this be here for debugging
-        self.log.info("[JS Evaluation Result]:", result)
+        self.log.info(f"[JS Evaluation Result]: {result}")
         return result
 
     async def handle_screenshot(self):
