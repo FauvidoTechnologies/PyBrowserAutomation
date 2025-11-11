@@ -163,9 +163,13 @@ class PlaywrightActionPerformer:
             return
         else:
             try:
-                await locator.click(timeout=5000)
+                await locator.click(timeout=1000)
             except Exception:
-                await locator.click(force=True, timeout=5000)
+                try:
+                    await locator.click(force=True, timeout=1000)
+                except Exception as e:
+                    print(f"clicking failed: {e}")
+                    return None
 
     async def handle_double_click(self):
         """
@@ -244,7 +248,7 @@ class PlaywrightActionPerformer:
         if self.action.wait_selector:
             await self.page.wait_for_selector(
                 self.action.wait_selector,
-                timeout=self.action.wait_timeout or 5000,
+                timeout=self.action.wait_timeout or 1000,
             )
         elif self.action.wait_ms:
             await asyncio.sleep(self.action.wait_ms / 1000)
@@ -373,4 +377,9 @@ async def perform_action(page: Page, action: PlaywrightAction) -> None:
     """
     # assert isinstance(action, PlaywrightAction), "the input type for action is incorrect!"
     performer = PlaywrightActionPerformer(page, action)
-    await performer.perform()
+
+    try:
+        await performer.perform()
+        return True
+    except Exception:
+        return None

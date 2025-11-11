@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PlaywrightAction(BaseModel):
@@ -14,47 +14,127 @@ class PlaywrightAction(BaseModel):
         and the goal of the task.
     """
 
-    goto: Optional[str]
-    go_back: Optional[bool]
-    go_forward: Optional[bool]
-    reload: Optional[bool]
+    # Navigation
+    goto: Optional[str] = Field(None, description="Navigate to the given URL using page.goto().")
+    go_back: Optional[bool] = Field(
+        None, description="Navigate back in browser history using page.go_back()."
+    )
+    go_forward: Optional[bool] = Field(
+        None, description="Navigate forward in browser history using page.go_forward()."
+    )
+    reload: Optional[bool] = Field(
+        None, description="Reload the current page using page.reload()."
+    )
 
-    click: Optional[str]
-    dblclick: Optional[str]
-    hover: Optional[str]
-    fill_selector: Optional[str]
-    fill_value: Optional[str]
-    type_selector: Optional[str]
-    type_text: Optional[str]
-    press_selector: Optional[str]
-    press_key: Optional[str]
-    check: Optional[str]
-    uncheck: Optional[str]
-    select_selector: Optional[str]
-    select_value: Optional[str]
-    upload_selector: Optional[str]
-    upload_path: Optional[str]
+    # Interaction
+    click: Optional[str] = Field(
+        None, description="Click the specified element using page.click(selector)."
+    )
+    dblclick: Optional[str] = Field(
+        None, description="Double-click the specified element using page.dblclick(selector)."
+    )
+    hover: Optional[str] = Field(
+        None, description="Hover over the specified element using page.hover(selector)."
+    )
 
-    scroll_x: Optional[int]
-    scroll_y: Optional[int]
-    wait_selector: Optional[str]
-    wait_timeout: Optional[int]
-    wait_ms: Optional[int]
+    # Input
+    fill_selector: Optional[str] = Field(
+        None, description="Selector of the input element to fill using page.fill()."
+    )
+    fill_value: Optional[str] = Field(
+        None, description="Value to fill into the element specified by fill_selector."
+    )
+    type_selector: Optional[str] = Field(
+        None, description="Selector of the input element to type into using page.type()."
+    )
+    type_text: Optional[str] = Field(
+        None, description="Text to type into the element specified by type_selector."
+    )
+    press_selector: Optional[str] = Field(
+        None,
+        description="Selector of the element to send a key press event to using page.press().",
+    )
+    press_key: Optional[str] = Field(
+        None, description="Key to press (e.g., 'Enter', 'Escape', 'ArrowDown') in page.press()."
+    )
+    check: Optional[str] = Field(
+        None, description="Selector of a checkbox or radio button to check using page.check()."
+    )
+    uncheck: Optional[str] = Field(
+        None, description="Selector of a checkbox or radio button to uncheck using page.uncheck()."
+    )
+    select_selector: Optional[str] = Field(
+        None, description="Selector of a <select> element to modify using page.select_option()."
+    )
+    select_value: Optional[str] = Field(
+        None, description="Option value to select within the element specified by select_selector."
+    )
+    upload_selector: Optional[str] = Field(
+        None,
+        description="Selector of a file input element to upload a file using page.set_input_files().",
+    )
+    upload_path: Optional[str] = Field(
+        None, description="Path to the file(s) to upload for upload_selector."
+    )
 
-    keyboard_press: Optional[str]
-    keyboard_type: Optional[str]
-    mouse_move_x: Optional[int]
-    mouse_move_y: Optional[int]
-    mouse_click_x: Optional[int]
-    mouse_click_y: Optional[int]
+    # Scrolling and Waiting
+    scroll_x: Optional[int] = Field(
+        None, description="Horizontal scroll position to move to using page.evaluate()."
+    )
+    scroll_y: Optional[int] = Field(
+        None, description="Vertical scroll position to move to using page.evaluate()."
+    )
+    wait_selector: Optional[str] = Field(
+        None, description="Selector to wait for before proceeding using page.wait_for_selector()."
+    )
+    wait_timeout: Optional[int] = Field(
+        None, description="Maximum time (in ms) to wait for the selector or event."
+    )
+    wait_ms: Optional[int] = Field(
+        None, description="Wait for a fixed duration (in milliseconds) using time.sleep()."
+    )
 
-    new_page: Optional[str]
-    close_page: Optional[bool]
-    switch_page_index: Optional[int]
+    # Keyboard and Mouse
+    keyboard_press: Optional[str] = Field(
+        None, description="Key to simulate a keyboard press event using page.keyboard.press()."
+    )
+    keyboard_type: Optional[str] = Field(
+        None, description="Text to type using page.keyboard.type()."
+    )
+    mouse_move_x: Optional[int] = Field(
+        None, description="X-coordinate to move the mouse to using page.mouse.move()."
+    )
+    mouse_move_y: Optional[int] = Field(
+        None, description="Y-coordinate to move the mouse to using page.mouse.move()."
+    )
+    mouse_click_x: Optional[int] = Field(
+        None, description="X-coordinate for a direct mouse click using page.mouse.click()."
+    )
+    mouse_click_y: Optional[int] = Field(
+        None, description="Y-coordinate for a direct mouse click using page.mouse.click()."
+    )
 
-    evaluate_js: Optional[str]
-    screenshot_path: Optional[str]
-    download_selector: Optional[str]
+    # Page and Context Management
+    new_page: Optional[str] = Field(
+        None, description="Create a new browser page (optionally with a given URL)."
+    )
+    close_page: Optional[bool] = Field(
+        None, description="Close the current page using page.close()."
+    )
+    switch_page_index: Optional[int] = Field(
+        None, description="Switch to another open page by its index in context.pages()."
+    )
+
+    # Evaluation and Utilities
+    evaluate_js: Optional[str] = Field(
+        None, description="Run JavaScript code in the browser context using page.evaluate()."
+    )
+    screenshot_path: Optional[str] = Field(
+        None, description="Path to save a screenshot using page.screenshot()."
+    )
+    download_selector: Optional[str] = Field(
+        None, description="Selector to trigger a download event from (e.g., a link or button)."
+    )
 
 
 class PlaywrightResponse(BaseModel):
