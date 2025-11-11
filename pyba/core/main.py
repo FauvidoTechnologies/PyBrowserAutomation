@@ -222,6 +222,8 @@ class Engine:
                 )
 
                 if output:
+                    await self.save_trace()
+                    await self.shut_down()
                     return output
 
                 self.log.action(action)
@@ -250,6 +252,8 @@ class Engine:
                     )
 
                     if output:
+                        await self.save_trace()
+                        await self.shut_down()
                         return output
 
                     self.log.action(action)
@@ -279,8 +283,6 @@ class Engine:
         """
         if action is None or all(value is None for value in vars(action).values()):
             self.log.success("Automation completed, agent has returned None")
-            await self.save_trace()
-            await self.shut_down()
             try:
                 output = self.playwright_agent.get_output(
                     cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
