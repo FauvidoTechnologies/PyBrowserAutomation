@@ -222,12 +222,6 @@ class GeneralDOMExtraction:
                 tag = (await el.evaluate("e => e.tagName.toLowerCase()")).strip()
                 input_type = await el.get_attribute("type")
                 input_type = (input_type or "text").lower().strip()
-
-                is_fillable_by_playwright = tag in ["input", "textarea"]
-                if not is_fillable_by_playwright:
-                    continue
-                # If not fillable, then skip it immediately
-
                 existing_value = await el.input_value() if tag in ["input", "textarea"] else ""
 
                 if tag not in set(config["extraction_configs"]["input_fields"]["valid_tags"]):
@@ -276,24 +270,21 @@ class GeneralDOMExtraction:
                 new_value = await el.input_value()
 
                 if self.test_value in new_value:
-                    print("inside if")
                     valid_fields.append(field_info)
                     seen_selectors.add(selector)
+
+                    # TODO: This is failing in some cases because some websites re-render them so we need the selectors again!
+                    # This means cleanup requires its own set of elements.
+                    # Atleast we understand the problem now
                     await el.fill("")  # clearing the field after testing it
-                    await asyncio.sleep(0.1)
-                    await el.fill("")
                 else:
-                    print("inside else")
-                    await el.fill("")  # ignore false positives
-                    pass
+                    pass  # ignore false positives
 
             except PlaywrightTimeoutError:
                 continue
-            except Exception as e:
-                self.log.warning(f"Error processing DOM element: {e}")
+            except Exception:
                 continue
-        # Tiny settling delay
-        await asyncio.sleep(0.1)
+
         return valid_fields
 
     async def extract(self) -> CleanedDOM:
