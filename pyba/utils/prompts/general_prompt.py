@@ -13,8 +13,6 @@ Your goal is to interpret the user's intent and decide the next Playwright actio
 
 ### CURRENT PAGE CONTEXT (Cleaned DOM)
 
-# Note that we open by default at Google.com, so the first page will be google's landing page.
-
 **Current page URL**
 {current_url}
 
@@ -34,8 +32,16 @@ Your goal is to interpret the user's intent and decide the next Playwright actio
 
 ---
 
-**History of all the SUCCESSFUL actions**
+**The previous action**
 {history}
+
+`Note`:
+
+This was the result of the previous output: {action_output}
+
+The previous action was a {history_type}!
+
+
 
 ---
 ### YOUR JOB
@@ -99,10 +105,9 @@ You must output **only a valid JSON object** of type `PlaywrightResponse`.
 
 If you believe the automation has completed and there is nothing more to do, return `None`.
 
-IMPORTANT:
+IMPORTANT: Assume that the previous action (passed below) was successful UNLESS mentioned otherwise.
 
-The history being passed to you is what has been successful. You don't have to repeat the same action again.
+**The previous action**
 
-**History of all the SUCCESSFUL actions**
 {history}
 """

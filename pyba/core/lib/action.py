@@ -144,15 +144,19 @@ class PlaywrightActionPerformer:
         except Error:
             # Catching a strict mode violation and defaulting to the first click
             # Unfortunately playwright errors aren't fully specific
-            first_locator = locator.first
-            href = await first_locator.evaluate(
-                """
-                el => {
-                    let link = el.tagName.toLowerCase() === 'a' ? el : el.closest('a');
-                    return link ? link.getAttribute('href') : null;
-                }
-                """
-            )
+            try:
+                first_locator = locator.first
+                href = await first_locator.evaluate(
+                    """
+                    el => {
+                        let link = el.tagName.toLowerCase() === 'a' ? el : el.closest('a');
+                        return link ? link.getAttribute('href') : null;
+                    }
+                    """,
+                    timeout=5000,
+                )
+            except Exception as e:
+                raise e
         if href:
             # Handling relative links by checking for a schema and a netloc (host + optional port)
             if not is_absolute_url(href):
@@ -164,12 +168,17 @@ class PlaywrightActionPerformer:
         else:
             try:
                 await locator.click(timeout=1000)
-            except Exception:
-                try:
-                    await locator.click(force=True, timeout=1000)
-                except Exception as e:
-                    print(f"clicking failed: {e}")
-                    return None
+            except Error as e:  # Another strict mode violation
+                if "strict mode violation" in str(e):
+                    try:
+                        first_locator = locator.first
+                        await first_locator.click(force=True, timeout=1000)
+                    except Exception as e:
+                        raise e
+                elif "Timeout 1000ms exceeded" in str(e):
+                    raise e  # For it to be caught later
+            except Exception as e:
+                raise e
 
     async def handle_double_click(self):
         """
@@ -371,7 +380,7 @@ class PlaywrightActionPerformer:
             return await self.handle_switch_page()
 
 
-async def perform_action(page: Page, action: PlaywrightAction) -> None:
+async def perform_action(page: Page, action: PlaywrightAction):
     """
     The entry point function
     """
@@ -380,6 +389,6 @@ async def perform_action(page: Page, action: PlaywrightAction) -> None:
 
     try:
         await performer.perform()
-        return True
-    except Exception:
-        return None
+        return True, None  # The fail_reason is None
+    except Exception as e:
+        return None, e

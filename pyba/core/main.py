@@ -54,7 +54,10 @@ class Engine:
 
             `database`: An instance of the Database class which will define all database specific configs
 
-        Find these default values at `pyba/config.yaml`
+        Find these default values at `pyba/config.yaml`.
+
+        The class performs a lot of error handling which might make the code slighlty harder to read.
+        The refactoring process is ongoing (all-the-time)
         """
         self.session_id = uuid.uuid4().hex
         self.headless_mode = headless
@@ -228,7 +231,7 @@ class Engine:
                         session_id=self.session_id, action=str(action), page_url=str(self.page.url)
                     )
                 # If its not None, then perform it
-                value = await perform_action(self.page, action)
+                value, fail_reason = await perform_action(self.page, action)
 
                 if value is None:
                     # This means the action failed due to whatever reason. The best bet is to
@@ -236,7 +239,10 @@ class Engine:
                     self.log.warning("The previous action failed, checking the latest page")
                     cleaned_dom = await self.extract_dom()
                     action = self.playwright_agent.process_action(
-                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
+                        cleaned_dom=cleaned_dom.to_dict(),
+                        user_prompt=prompt,
+                        history=history,
+                        fail_reason=fail_reason,
                     )
 
                     output = await self.generate_output(
