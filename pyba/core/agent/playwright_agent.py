@@ -35,7 +35,11 @@ class PlaywrightAgent(Retry):
         self.action_agent, self.output_agent = self.llm_factory.get_agent()
 
     def _initialise_prompt(
-        self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str, main_instruction: str
+        self,
+        cleaned_dom: Dict[str, Union[List, str]],
+        user_prompt: str,
+        main_instruction: str,
+        history: List[str] = None,
     ):
         """
         Method to initailise the main instruction for any agent
@@ -44,10 +48,12 @@ class PlaywrightAgent(Retry):
             `cleaned_dom`: A dictionary containing nicely formatted DOM elements
             `user_prompt`: The instructions given by the user
             `main_instruction`: The prompt for the playwright agent
+            `history`: An episodic memory of all the successfully executed tasks
         """
 
         # Adding the user_prompt to the DOM to make it easier to format the prompt
         cleaned_dom["user_prompt"] = user_prompt
+        cleaned_dom["history"] = history
         prompt = main_instruction.format(**cleaned_dom)
 
         return prompt
@@ -188,7 +194,7 @@ class PlaywrightAgent(Retry):
             return action.actions[0]
 
     def process_action(
-        self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str
+        self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str, history: List[str] = None
     ) -> PlaywrightResponse:
         """
         Method to process the DOM and provide an actionable playwright response
@@ -200,6 +206,7 @@ class PlaywrightAgent(Retry):
                 - `clickable_fields`: List
                 - `actual_text`: string
             `user_prompt`: The instructions given by the user
+            `history`: An episodic memory of all the successfully executed tasks
 
             We're assuming this to be well explained. In later versions we'll
             add one more layer on top for plan generation and better commands
@@ -207,7 +214,10 @@ class PlaywrightAgent(Retry):
             output: A predefined pydantic model
         """
         prompt = self._initialise_prompt(
-            cleaned_dom=cleaned_dom, user_prompt=user_prompt, main_instruction=general_prompt
+            cleaned_dom=cleaned_dom,
+            user_prompt=user_prompt,
+            main_instruction=general_prompt,
+            history=history,
         )
 
         return self._call_model(agent=self.action_agent, prompt=prompt, agent_type="action")

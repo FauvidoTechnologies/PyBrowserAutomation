@@ -15,14 +15,16 @@ You are currently viewing a snapshot of the webpage's DOM, represented as struct
 
 ### CURRENT PAGE CONTEXT (Cleaned DOM)
 
+**Current page URL**
+{current_url}
+
+---
+
 **Hyperlinks (clickable anchors or navigation targets):**
 {hyperlinks}
 
 **Visible Text (actual text content present on the page):**
 {actual_text}
-
-**Current page URL**
-{current_url}
 
 ---
 ### YOUR JOB

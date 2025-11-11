@@ -1,4 +1,5 @@
 import asyncio
+import json
 import uuid
 from typing import List, Union
 
@@ -192,9 +193,23 @@ class Engine:
                 # Say we're going to run only 10 steps so far, so after this no more automation
                 # Get an actionable PlaywrightResponse from the models
                 try:
+                    try:
+                        # Get history if db_funs is defined, that is, Databases are being used
+                        history = None
+                        if self.db_funcs:
+                            history = self.db_funcs.get_episodic_memory_by_session_id(
+                                session_id=self.session_id
+                            )
+
+                        history = json.loads(history.actions)[-1] if history else ""
+                    except Exception as e:
+                        self.log.warning(f"Couldn't query the database for history: {e}")
+                        history = ""
+
                     action = self.playwright_agent.process_action(
-                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
+                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
                     )
+
                 except Exception as e:
                     self.log.error(f"something went wrong in obtaining the response: {e}")
                     action = None
