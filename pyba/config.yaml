@@ -1,7 +1,7 @@
 main_engine_configs:
 
   # Default configs for the main loop
-  max_iteration_steps: 10
+  max_iteration_steps: 100
   input_field_test_value: "PyBA"
   headless_mode: False        # By default, doesn't run in the headless mode
   handle_dependencies: True   # By default, we try to install all the recommended dependencies

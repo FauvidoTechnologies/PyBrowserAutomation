@@ -13,7 +13,10 @@ Your goal is to interpret the user's intent and decide the next Playwright actio
 
 ### CURRENT PAGE CONTEXT (Cleaned DOM)
 
-# Note that we open by default at Google.com, so the first page will be google's landing page.
+**Current page URL**
+{current_url}
+
+---
 
 **Hyperlinks (clickable anchors or navigation targets):**
 {hyperlinks}
@@ -27,8 +30,18 @@ Your goal is to interpret the user's intent and decide the next Playwright actio
 **Visible Text (actual text content present on the page):**
 {actual_text}
 
-**Current page URL**
-{current_url}
+---
+
+**The previous action**
+{history}
+
+`Note`:
+
+This was the result of the previous output: {action_output}
+
+The previous action was a {history_type}!
+
+
 
 ---
 ### YOUR JOB
@@ -92,54 +105,9 @@ You must output **only a valid JSON object** of type `PlaywrightResponse`.
 
 If you believe the automation has completed and there is nothing more to do, return `None`.
 
----
+IMPORTANT: Assume that the previous action (passed below) was successful UNLESS mentioned otherwise.
 
-### EXAMPLES
+**The previous action**
 
-**Example 1:**  
-
-User wants to search for “Python Playwright tutorial” on Google.
-
-- You find an input field with placeholder “Search” → Fill it.  
-- Next step → Press Enter on that same input.
-
-{{
-  "actions": [
-    {{
-      "fill_selector": "input[name='q']",
-      "fill_value": "Python Playwright tutorial"
-    }}
-  ]
-}}
-
-Then, in the following step:
-{{
-  "actions": [
-    {{
-      "press_selector": "input[name='q']",
-      "press_key": "Enter"
-    }}
-  ]
-}}
-
-Example 2:
-User wants to submit a form but no “submit” button is visible.
-
-- Press Enter on the most relevant visible input field that was recently filled or matches the context.
-
-{{
-  "actions": [
-    {{
-      "press_selector": "input[name='email']",
-      "press_key": "Enter"
-    }}
-  ]
-}}
-
-
-IMPORTANT:
-
-YOU CAN ALWAYS WORK WITH THE ASSUMPTION THAT WHATEVER YOU HAD PREVIOUSLY ASKED FOR HAS BEEN ACHIEVED. Look at the available information about the page
-and make an inference of what is on the page and what is requested by the user.
-
+{history}
 """

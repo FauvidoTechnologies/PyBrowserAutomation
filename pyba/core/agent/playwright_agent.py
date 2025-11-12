@@ -35,7 +35,12 @@ class PlaywrightAgent(Retry):
         self.action_agent, self.output_agent = self.llm_factory.get_agent()
 
     def _initialise_prompt(
-        self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str, main_instruction: str
+        self,
+        cleaned_dom: Dict[str, Union[List, str]],
+        user_prompt: str,
+        main_instruction: str,
+        history: List[str] = None,
+        fail_reason: str = None,
     ):
         """
         Method to initailise the main instruction for any agent
@@ -44,10 +49,23 @@ class PlaywrightAgent(Retry):
             `cleaned_dom`: A dictionary containing nicely formatted DOM elements
             `user_prompt`: The instructions given by the user
             `main_instruction`: The prompt for the playwright agent
+            `history`: An episodic memory of all the successfully executed tasks
+            `fail_reason`: The reason for the failure of the previous action
+
+        The fail_reason decides if the previous access was a success or not.
         """
 
         # Adding the user_prompt to the DOM to make it easier to format the prompt
         cleaned_dom["user_prompt"] = user_prompt
+        cleaned_dom["history"] = history
+
+        if fail_reason:
+            cleaned_dom["action_output"] = fail_reason
+            cleaned_dom["history_type"] = "failure"
+        else:
+            cleaned_dom["action_output"] = "Success"
+            cleaned_dom["history_type"] = "success"
+
         prompt = main_instruction.format(**cleaned_dom)
 
         return prompt
@@ -158,7 +176,9 @@ class PlaywrightAgent(Retry):
                     raise IndexError("No 'output' found in VertexAI response.")
 
             except Exception as e:
-                self.log.error(f"Unable to parse the output from VertexAI response: {e}")
+                if not response:
+                    self.log.error(f"Unable to parse the output from VertexAI response: {e}")
+                # If we have a response which cannot be parsed, it MUST be a None value
 
         else:  # Using gemini
             gemini_config = {
@@ -188,7 +208,11 @@ class PlaywrightAgent(Retry):
             return action.actions[0]
 
     def process_action(
-        self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str
+        self,
+        cleaned_dom: Dict[str, Union[List, str]],
+        user_prompt: str,
+        history: List[str] = None,
+        fail_reason: str = None,
     ) -> PlaywrightResponse:
         """
         Method to process the DOM and provide an actionable playwright response
@@ -200,14 +224,21 @@ class PlaywrightAgent(Retry):
                 - `clickable_fields`: List
                 - `actual_text`: string
             `user_prompt`: The instructions given by the user
+            `history`: An episodic memory of all the successfully executed tasks
+            `fail_reason`: Holds the fail-reason should the previous task fail
 
             We're assuming this to be well explained. In later versions we'll
             add one more layer on top for plan generation and better commands
 
             output: A predefined pydantic model
         """
+
         prompt = self._initialise_prompt(
-            cleaned_dom=cleaned_dom, user_prompt=user_prompt, main_instruction=general_prompt
+            cleaned_dom=cleaned_dom,
+            user_prompt=user_prompt,
+            main_instruction=general_prompt,
+            history=history,
+            fail_reason=fail_reason,
         )
 
         return self._call_model(agent=self.action_agent, prompt=prompt, agent_type="action")

@@ -272,6 +272,10 @@ class GeneralDOMExtraction:
                 if self.test_value in new_value:
                     valid_fields.append(field_info)
                     seen_selectors.add(selector)
+
+                    # TODO: This is failing in some cases because some websites re-render them so we need the selectors again!
+                    # This means cleanup requires its own set of elements.
+                    # Atleast we understand the problem now
                     await el.fill("")  # clearing the field after testing it
                 else:
                     pass  # ignore false positives
