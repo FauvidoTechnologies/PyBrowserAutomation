@@ -1,11 +1,13 @@
 import asyncio
-from typing import Literal
 
-from pyba.core.agent import PlaywrightAgent, PlannerAgent
+from pyba.core.agent import PlaywrightAgent
+from pyba.core.lib import HandleDependencies
+from pyba.core.lib.code_generation import CodeGeneration
 from pyba.core.provider import Provider
 from pyba.core.scripts import ExtractionEngines
 from pyba.database import DatabaseFunctions
 from pyba.logger import setup_logger, get_logger
+from pyba.utils.exceptions import DatabaseNotInitialised
 
 
 class BaseEngine:
@@ -25,7 +27,8 @@ class BaseEngine:
         trace_save_directory=None,
         database=None,
         use_logger=None,
-        mode: Literal["DFS", "BFS"] = None,
+        mode=None,
+        handle_dependencies=False,
         openai_api_key: str = None,
         vertexai_project_id: str = None,
         vertexai_server_location: str = None,
@@ -35,13 +38,11 @@ class BaseEngine:
         self.tracing = enable_tracing
         self.trace_save_directory = trace_save_directory
 
+        self.mode = mode
         self.database = database
         self.db_funcs = DatabaseFunctions(self.database) if database else None
 
         self.automated_login_engine_classes = []
-
-        self.mode = mode  # mode for exploratory analysis
-
         setup_logger(use_logger=use_logger)
         self.log = get_logger()
 
@@ -61,10 +62,9 @@ class BaseEngine:
 
         # Defining the playwright agent with the defined configs
         self.playwright_agent = PlaywrightAgent(engine=self)
-        self.planner_agent = None
-        if self.mode:
-            # If mode is not None, call the planner agent
-            self.planner_agent = PlannerAgent(engine=self)
+
+        if handle_dependencies:
+            HandleDependencies.playwright.handle_dependencies()
 
     async def run(self):
         """
@@ -162,3 +162,20 @@ class BaseEngine:
         """
         await self.context.close()
         await self.browser.close()
+
+    def generate_code(self, output_path: str) -> bool:
+        """
+        Function end-point for code generation
+
+        Args:
+            `output_path`: output file path to save the generated code to
+        """
+        if not self.db_funcs:
+            raise DatabaseNotInitialised()
+
+        codegen = CodeGeneration(
+            session_id=self.session_id, output_path=output_path, database_funcs=self.db_funcs
+        )
+        codegen.generate_script()
+        self.log.info(f"Created the script at: {output_path}")
+        return True

@@ -218,7 +218,7 @@ class LLMFactory:
             A single agent for a particular provider
         """
 
-        if self.mode not in ("BFS", "DFS"):
+        if self.mode not in ("BFS", "DFS", "Normal"):
             raise IncorrectMode(mode=self.mode)
 
         if self.engine.provider == "openai":

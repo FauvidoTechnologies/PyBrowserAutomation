@@ -1,2 +1,3 @@
 from pyba.core.lib.handle_dependencies import HandleDependencies
-from pyba.core.lib.mode.base import BaseEngine
+from pyba.core.lib.mode.BFS import BFS
+from pyba.core.lib.mode.DFS import DFS
