@@ -38,7 +38,6 @@ class PlannerAgent(Retry):
         self.agent = self.llm_factory.get_planner_agent()
 
         self.max_breadth = config["max_breadth"]
-        self.max_depth = config["max_depth"]
 
     def _initialise_prompt(self, task: str):
         """

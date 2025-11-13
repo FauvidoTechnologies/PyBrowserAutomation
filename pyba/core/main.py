@@ -7,14 +7,13 @@ from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
 from pyba.core.agent import PlaywrightAgent, PlannerAgent
-from pyba.core.lib import HandleDependencies
+from pyba.core.lib import HandleDependencies, BaseEngine
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration
 from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
-from pyba.database import Database, DatabaseFunctions
-from pyba.logger import get_logger, setup_logger
+from pyba.database import Database
 from pyba.utils.common import initial_page_setup
 from pyba.utils.exceptions import PromptNotPresent, UnknownSiteChosen, DatabaseNotInitialised
 from pyba.utils.load_yaml import load_config
@@ -22,9 +21,30 @@ from pyba.utils.load_yaml import load_config
 config = load_config("general")
 
 
-class Engine:
+class Engine(BaseEngine):
     """
     The main entrypoint for browser automation. This engine exposes the main entry point which is the run() method
+
+    Args:
+        `openai_api_key`: API key for OpenAI models should you want to use that
+        `vertexai_project_id`: Create a VertexAI project to use that instead of OpenAI
+        `vertexai_server_location`: VertexAI server location
+        `gemini_api_key`: API key for Gemini-2.5-pro native support without VertexAI
+        `headless`: Choose if you want to run in the headless mode or not
+        `mode`: Mode of operation for exploratory analysis, can be either DFS or BFS
+        `handle_dependencies`: Choose if you want to automatically install dependencies during runtime
+        `use_logger`: Choose if you want to use the logger (that is enable logging of data)
+        `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
+        `trace_save_directory`: The directory where you want the .zip file to be saved
+
+        `database`: An instance of the Database class which will define all database specific configs
+
+    Find these default values at `pyba/config.yaml`.
+
+    The `Engine` is inherited off from the `BaseEngine`. The BaseEngine handles the common methods for
+    all the modes (default, DFS and BFS). The main `Engine` decides if execution needs to be passed to a different
+    mode depending on what is set by the user.
+
     """
 
     def __init__(
@@ -41,41 +61,18 @@ class Engine:
         trace_save_directory: str = None,
         database: Database = None,
     ):
-        """
-        Args:
-            `openai_api_key`: API key for OpenAI models should you want to use that
-            `vertexai_project_id`: Create a VertexAI project to use that instead of OpenAI
-            `vertexai_server_location`: VertexAI server location
-            `gemini_api_key`: API key for Gemini-2.5-pro native support without VertexAI
-            `headless`: Choose if you want to run in the headless mode or not
-            `mode`: Mode of operation for exploratory analysis, can be either DFS or BFS
-            `handle_dependencies`: Choose if you want to automatically install dependencies during runtime
-            `use_logger`: Choose if you want to use the logger (that is enable logging of data)
-            `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
-            `trace_save_directory`: The directory where you want the .zip file to be saved
+        # Passing the common setup to the BaseEngine
+        super().__init__(
+            headless=headless,
+            enable_tracing=enable_tracing,
+            trace_save_directory=trace_save_directory,
+            database=database,
+            use_logger=use_logger,
+        )
 
-            `database`: An instance of the Database class which will define all database specific configs
-
-        Find these default values at `pyba/config.yaml`.
-
-        The class performs a lot of error handling which might make the code slighlty harder to read.
-        The refactoring process is ongoing (all-the-time)
-        """
+        # session_id stays here becasue BaseEngine will be inherited by many
         self.session_id = uuid.uuid4().hex
-        self.headless_mode = headless
-        self.tracing = enable_tracing
-        self.trace_save_directory = trace_save_directory
-
         self.mode = mode  # mode for exploratory analysis
-
-        # Handle database instances using `db_funcs`
-        self.database = database
-        self.db_funcs = DatabaseFunctions(self.database) if database else None
-
-        # A global setup for the logger so others can directly import and use
-        setup_logger(use_logger=use_logger)
-        self.log = get_logger()
-
         self.automated_login_engine_classes = []
 
         selectors = tuple(config["process_config"]["selectors"])
@@ -100,7 +97,6 @@ class Engine:
         # Defining the playwright agent with the defined configs
         self.playwright_agent = PlaywrightAgent(engine=self)
         self.planner_agent = None
-
         if self.mode:
             # If mode is not None, call the planner agent
             self.planner_agent = PlannerAgent(engine=self)
@@ -147,8 +143,8 @@ class Engine:
                 enable_tracing=self.tracing,
                 trace_save_directory=self.trace_save_directory,
             )
-            self.trace_dir = tracing.trace_dir
 
+            self.trace_dir = tracing.trace_dir
             self.context = await tracing.initialize_context()
             self.page = await self.context.new_page()
             cleaned_dom = await initial_page_setup(self.page)
@@ -281,97 +277,6 @@ class Engine:
 
         await self.save_trace()
         await self.shut_down()
-
-    async def generate_output(self, action, cleaned_dom, prompt):
-        """
-        Helper function to generate the output if the action
-        has been completed.
-
-        Args:
-            `action`: The action as given out by the model
-            `cleaned_dom`: The latest cleaned_dom for the model to read
-            `prompt`: The prompt which was given to the model
-        """
-        if action is None or all(value is None for value in vars(action).values()):
-            self.log.success("Automation completed, agent has returned None")
-            try:
-                output = self.playwright_agent.get_output(
-                    cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
-                )
-                self.log.info(f"This is the output given by the model: {output}")
-                return output
-            except Exception:
-                # This should rarely happen
-                await asyncio.sleep(10)
-                output = self.playwright_agent.get_output(
-                    cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt
-                )
-                self.log.info(f"This is the output given by the model: {output}")
-                return output
-        else:
-            return None
-
-    async def extract_dom(self):
-        """
-        Extracts the relevant fields from the DOM of the current page and returns
-        the DOM dataclass.
-        """
-        try:
-            await self.page.wait_for_load_state(
-                "networkidle", timeout=1000
-            )  # Wait for a second for network calls to stablize
-            page_html = await self.page.content()
-        except Exception:
-            # We might get a "Unable to retrieve content because the page is navigating and changing the content" exception
-            # This might happen because page.content() will start and issue an evaluate, while the page is reloading and making network calls
-            # So, once it gets a response, it commits it and clears the execution contents so page.content() fails.
-            # See https://github.com/microsoft/playwright/issues/16108
-
-            # We might choose to wait for networkidle -> https://github.com/microsoft/playwright/issues/22897
-            try:
-                await self.page.wait_for_load_state("networkidle", timeout=2000)
-            except Exception:
-                # If networkidle never happens, then we'll try a direct wait
-                await asyncio.sleep(3)
-
-            page_html = await self.page.content()
-
-        body_text = await self.page.inner_text("body")
-        elements = await self.page.query_selector_all(self.combined_selector)
-        base_url = self.page.url
-
-        # Then we need to extract the new cleaned_dom from the page
-        # Passing in known_fields for the input fields that we already know off so that
-        # its easier for the extraction engine to work
-        extraction_engine = ExtractionEngines(
-            html=page_html,
-            body_text=body_text,
-            elements=elements,
-            base_url=base_url,
-            page=self.page,
-        )
-
-        # Perform an all out extraction
-        cleaned_dom = await extraction_engine.extract_all()
-        cleaned_dom.current_url = base_url
-        return cleaned_dom
-
-    async def save_trace(self):
-        """
-        Endpoint to save the trace if required
-        """
-        if self.tracing:
-            trace_path = self.trace_dir / f"{self.session_id}_trace.zip"
-            self.log.info(f"This is the tracepath: {trace_path}")
-            await self.context.tracing.stop(path=str(trace_path))
-
-    async def shut_down(self):
-        """
-        Function to cleanly close the existing browsers and contexts. This also saves
-        the traces in the provided trace_dir by the user or the default.
-        """
-        await self.context.close()
-        await self.browser.close()
 
     def sync_run(
         self, prompt: str = None, automated_login_sites: List[str] = None
