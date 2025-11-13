@@ -1,5 +1,8 @@
 import asyncio
+from typing import Literal
 
+from pyba.core.agent import PlaywrightAgent, PlannerAgent
+from pyba.core.provider import Provider
 from pyba.core.scripts import ExtractionEngines
 from pyba.database import DatabaseFunctions
 from pyba.logger import setup_logger, get_logger
@@ -22,6 +25,11 @@ class BaseEngine:
         trace_save_directory=None,
         database=None,
         use_logger=None,
+        mode: Literal["DFS", "BFS"] = None,
+        openai_api_key: str = None,
+        vertexai_project_id: str = None,
+        vertexai_server_location: str = None,
+        gemini_api_key: str = None,
     ):
         self.headless_mode = headless
         self.tracing = enable_tracing
@@ -30,8 +38,39 @@ class BaseEngine:
         self.database = database
         self.db_funcs = DatabaseFunctions(self.database) if database else None
 
+        self.automated_login_engine_classes = []
+
+        self.mode = mode  # mode for exploratory analysis
+
         setup_logger(use_logger=use_logger)
         self.log = get_logger()
+
+        provider_instance = Provider(
+            openai_api_key=openai_api_key,
+            gemini_api_key=gemini_api_key,
+            vertexai_project_id=vertexai_project_id,
+            vertexai_server_location=vertexai_server_location,
+        )
+
+        self.provider = provider_instance.provider
+        self.model = provider_instance.model
+        self.openai_api_key = provider_instance.openai_api_key
+        self.gemini_api_key = provider_instance.gemini_api_key
+        self.vertexai_project_id = provider_instance.vertexai_project_id
+        self.location = provider_instance.location
+
+        # Defining the playwright agent with the defined configs
+        self.playwright_agent = PlaywrightAgent(engine=self)
+        self.planner_agent = None
+        if self.mode:
+            # If mode is not None, call the planner agent
+            self.planner_agent = PlannerAgent(engine=self)
+
+    async def run(self):
+        """
+        Run function which will be defined inside all child classes
+        """
+        pass
 
     async def extract_dom(self):
         """

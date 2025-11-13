@@ -6,11 +6,9 @@ from typing import List, Union, Literal
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
 
-from pyba.core.agent import PlaywrightAgent, PlannerAgent
 from pyba.core.lib import HandleDependencies, BaseEngine
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration
-from pyba.core.provider import Provider
 from pyba.core.scripts import LoginEngine, ExtractionEngines
 from pyba.core.tracing import Tracing
 from pyba.database import Database
@@ -68,38 +66,20 @@ class Engine(BaseEngine):
             trace_save_directory=trace_save_directory,
             database=database,
             use_logger=use_logger,
+            mode=mode,
+            openai_api_key=openai_api_key,
+            vertexai_project_id=vertexai_project_id,
+            vertexai_server_location=vertexai_server_location,
+            gemini_api_key=gemini_api_key,
         )
 
         # session_id stays here becasue BaseEngine will be inherited by many
         self.session_id = uuid.uuid4().hex
-        self.mode = mode  # mode for exploratory analysis
-        self.automated_login_engine_classes = []
 
         selectors = tuple(config["process_config"]["selectors"])
         self.combined_selector = ", ".join(selectors)
 
         self.handle_dependencies(handle_dependencies)
-
-        provider_instance = Provider(
-            openai_api_key=openai_api_key,
-            gemini_api_key=gemini_api_key,
-            vertexai_project_id=vertexai_project_id,
-            vertexai_server_location=vertexai_server_location,
-        )
-
-        self.provider = provider_instance.provider
-        self.model = provider_instance.model
-        self.openai_api_key = provider_instance.openai_api_key
-        self.gemini_api_key = provider_instance.gemini_api_key
-        self.vertexai_project_id = provider_instance.vertexai_project_id
-        self.location = provider_instance.location
-
-        # Defining the playwright agent with the defined configs
-        self.playwright_agent = PlaywrightAgent(engine=self)
-        self.planner_agent = None
-        if self.mode:
-            # If mode is not None, call the planner agent
-            self.planner_agent = PlannerAgent(engine=self)
 
     @staticmethod
     def handle_dependencies(handle_dependencies: bool):
@@ -116,7 +96,7 @@ class Engine(BaseEngine):
                 versions we'll come up with a fix for that as well.
         """
 
-        # print(self.planner_agent.generate(task=prompt))
+        # print(type(self.planner_agent.generate(task=prompt)))     List in case of BFS and string in case of DFS
 
         if prompt is None:
             raise PromptNotPresent()
@@ -133,6 +113,8 @@ class Engine(BaseEngine):
                     self.automated_login_engine_classes.append(engine_class)
                 else:
                     raise UnknownSiteChosen(LoginEngine.available_engines())
+
+        # Call the relevant classes here
 
         async with Stealth().use_async(async_playwright()) as p:
             self.browser = await p.chromium.launch(headless=self.headless_mode)
