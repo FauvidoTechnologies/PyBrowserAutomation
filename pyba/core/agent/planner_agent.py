@@ -195,7 +195,9 @@ class PlannerAgent(Retry):
                 self.log.error("Parsed object has neither 'plans' nor 'plan' attribute.")
                 return None
 
-    def generate(self, task: str, old_plan: str = None) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
+    def generate(
+        self, task: str, old_plan: str = None
+    ) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
         """
         Endpoint to generate the plan(s) depending on the set mode (the agent encodes the mode)
 

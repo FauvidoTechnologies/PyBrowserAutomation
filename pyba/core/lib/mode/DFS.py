@@ -84,7 +84,7 @@ class DFS(BaseEngine):
 
         self.max_depth = max_depth
         self.max_breadth = max_depth
-        self.old_plan = None        # A variable to hold the old plan for the planner agent to understand what has been done already
+        self.old_plan = None  # A variable to hold the old plan for the planner agent to understand what has been done already
 
     async def run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """
@@ -156,7 +156,9 @@ class DFS(BaseEngine):
                     # Picking the clean DOM now
                     cleaned_dom = await self.extract_dom()
 
-                self.log.warning(f"The maximum depth for the current plan has been reached, generating a new plan")
+                self.log.warning(
+                    "The maximum depth for the current plan has been reached, generating a new plan"
+                )
                 self.old_plan = plan
 
     def sync_run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
