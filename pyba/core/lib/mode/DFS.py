@@ -2,9 +2,14 @@ import asyncio
 import uuid
 from typing import List, Union
 
+from playwright.async_api import async_playwright
+from playwright_stealth import Stealth
+
 from pyba.core.agent import PlannerAgent
+from pyba.core.lib.action import perform_action
 from pyba.core.lib.mode.base import BaseEngine
 from pyba.database import Database
+from pyba.utils.common import initial_page_setup
 from pyba.utils.load_yaml import load_config
 
 config = load_config("general")
@@ -27,6 +32,8 @@ class DFS(BaseEngine):
         `headless`: Choose if you want to run in the headless mode or not
         `handle_dependencies`: Choose if you want to automatically install dependencies during runtime
         `use_logger`: Choose if you want to use the logger (that is enable logging of data)
+        `max_depth`: The maximum depth to go into for each plan, where each level of depth corresponds to an action
+        `max_breadth`: The number of plans to execute one by one in depth
         `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
         `trace_save_directory`: The directory where you want the .zip file to be saved
 
@@ -47,6 +54,8 @@ class DFS(BaseEngine):
         headless: bool = config["main_engine_configs"]["headless_mode"],
         handle_dependencies: bool = config["main_engine_configs"]["handle_dependencies"],
         use_logger: bool = config["main_engine_configs"]["use_logger"],
+        max_depth: int = config["main_engine_configs"]["max_depth"],
+        max_breadth: int = config["main_engine_configs"]["max_depth"],
         enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
         trace_save_directory: str = None,
         database: Database = None,
@@ -73,13 +82,71 @@ class DFS(BaseEngine):
         self.combined_selector = ", ".join(selectors)
         self.planner_agent = PlannerAgent(engine=self)
 
+        self.max_depth = max_depth
+        self.max_breadth = max_depth
+
     async def run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """
         Run pyba in DFS mode.
         """
-        plan = self.planner_agent.generate(task=prompt)
+        async with Stealth().use_async(async_playwright()) as p:
+            self.browser = await p.chromium.launch(headless=self.headless_mode)
 
-        self.log.info(f"This is the plan for a DFS: {plan}")
+            self.context = await self.get_trace_context()
+            self.page = await self.context.new_page()
+            cleaned_dom = await initial_page_setup(self.page)
+
+            for steps in range(0, self.max_breadth):
+                # The breadth specifies the number of different plans we can execute
+                plan = self.planner_agent.generate(task=prompt)
+                self.log.info(f"This is the plan for a DFS: {plan}")
+
+                for _ in range(0, self.max_depth):
+                    # The depth is the number of actions for each plan
+                    # First check for login
+                    login_attempted_successfully = await self.attempt_login()
+                    # We'll count logging in as another step in the process
+                    if login_attempted_successfully:
+                        cleaned_dom = await self.successful_login_clean_and_get_dom()
+                        continue
+                    # Get an actionable element from the playwright agent
+                    history = self.fetch_history()
+                    action = self.fetch_action(
+                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
+                    )
+                    # Check if the automation has finished and if so, get the output
+                    output = await self.generate_output(
+                        action=action, cleaned_dom=cleaned_dom, prompt=prompt
+                    )
+                    if output:
+                        await self.save_trace()
+                        await self.shut_down()
+                        return output
+                    # If not, store the action and perform the action
+                    self.log.action(action)
+                    if self.db_funcs:
+                        self.db_funcs.push_to_episodic_memory(
+                            session_id=self.session_id,
+                            action=str(action),
+                            page_url=str(self.page.url),
+                        )
+                    value, fail_reason = await perform_action(self.page, action)
+                    if value is None:
+                        # This means the action failed due to whatever reason. The best bet is to
+                        # pass in the latest cleaned_dom and get the output again
+                        cleaned_dom = await self.extract_dom()
+                        output = await self.retry_perform_action(
+                            cleaned_dom=cleaned_dom.to_dict(),
+                            prompt=prompt,
+                            history=history,
+                            fail_reason=fail_reason,
+                        )
+                        if output:
+                            await self.save_trace()
+                            await self.shut_down()
+                            return output
+                    # Picking the clean DOM now
+                    cleaned_dom = await self.extract_dom()
 
     def sync_run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """

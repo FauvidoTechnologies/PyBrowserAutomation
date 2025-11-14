@@ -1,10 +1,14 @@
 import asyncio
+import json
+from typing import Dict, Optional
 
 from pyba.core.agent import PlaywrightAgent
 from pyba.core.lib import HandleDependencies
+from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration
 from pyba.core.provider import Provider
 from pyba.core.scripts import ExtractionEngines
+from pyba.core.tracing import Tracing
 from pyba.database import DatabaseFunctions
 from pyba.logger import setup_logger, get_logger
 from pyba.utils.exceptions import DatabaseNotInitialised
@@ -179,3 +183,186 @@ class BaseEngine:
         codegen.generate_script()
         self.log.info(f"Created the script at: {output_path}")
         return True
+
+    async def get_trace_context(self):
+        """
+        Helper function to intialise the context using the Tracing class
+
+        Return:
+            `context`: The playwright to be used for automation
+        """
+
+        tracing = Tracing(
+            browser_instance=self.browser,
+            session_id=self.session_id,
+            enable_tracing=self.tracing,
+            trace_save_directory=self.trace_save_directory,
+        )
+
+        self.trace_dir = tracing.trace_dir
+        context = await tracing.initialize_context()
+
+        return context
+
+    async def attempt_login(self) -> bool:
+        """
+        Helper function to attempt and perform a login to chosen sites
+
+        Returns:
+            `flag`: A boolean to indicate the success or failure for the attempt
+
+        The login attempt may fail due to two reasons:
+
+            - The current page is not a login page
+            - Some selectors changed due to which the login engine returned None
+
+        Note that the LoginEngines are hardcoded engines for speed.
+        """
+
+        flag = False
+
+        if self.automated_login_engine_classes:
+            for engine in self.automated_login_engine_classes:
+                engine_instance = engine(self.page)
+                self.log.info(f"Testing for {engine_instance.engine_name} login engine")
+                # Instead of just running it and checking inside, we can have a simple lookup list
+                out_flag = await engine_instance.run()
+                if out_flag:
+                    # This means it was True and we successfully logged in
+                    self.log.success(f"Logged in successfully through the {self.page.url} link")
+                    flag = True
+                    break
+                elif out_flag is None:
+                    # This means it wasn't for a login page for this engine
+                    pass
+                else:
+                    # This means it failed
+                    self.log.warning(f"Login attempted at {self.page.url} but failed!")
+
+        return flag
+
+    async def successful_login_clean_and_get_dom(self):
+        """
+        Helper function to obtain the cleaned_dom after a successful login
+
+        Functionality:
+
+        - Cleans the automated_login_engine_classes list (that is, we're assuming only 1 login session
+        for each run)
+        - Gets the latest page contents and parses the DOM using the extraction engine
+        """
+
+        self.automated_login_engine_classes = None
+
+        # Update the DOM after a login
+        try:
+            await self.page.wait_for_load_state("networkidle", timeout=2000)
+        except Exception:
+            await asyncio.sleep(2)
+
+        page_html = await self.page.content()
+        body_text = await self.page.inner_text("body")
+        elements = await self.page.query_selector_all(self.combined_selector)
+        base_url = self.page.url
+
+        extraction_engine = ExtractionEngines(
+            html=page_html,
+            body_text=body_text,
+            elements=elements,
+            base_url=base_url,
+            page=self.page,
+        )
+        cleaned_dom = await extraction_engine.extract_all()
+        cleaned_dom.current_url = base_url
+
+        return cleaned_dom
+
+    def fetch_history(self) -> str:
+        """
+        Helper function to obtain the history of actions
+
+        Returns:
+            `history`: The last successful action element or ""
+        """
+
+        try:
+            # Get history if db_funs is defined, that is, Databases are being used
+            history = None
+            if self.db_funcs:
+                history = self.db_funcs.get_episodic_memory_by_session_id(
+                    session_id=self.session_id
+                )
+
+            history = json.loads(history.actions)[-1] if history else ""
+        except Exception as e:
+            self.log.warning(f"Couldn't query the database for history: {e}")
+            history = ""
+
+        return history
+
+    def fetch_action(self, cleaned_dom: Dict, user_prompt: str, history: str):
+        """
+        Helper function to fetch an actionable PlaywrightResponse element
+
+        Args:
+            `cleaned_dom`: The DOM for the current page
+            `user_prompt`: The actual task given by the user
+            `history`: The last action performed by the model
+
+        Returns:
+            `action`: An actionable playwrightresponse element
+        """
+
+        try:
+            action = self.playwright_agent.process_action(
+                cleaned_dom=cleaned_dom, user_prompt=user_prompt, history=history
+            )
+        except Exception as e:
+            self.log.error(f"something went wrong in obtaining the response: {e}")
+            action = None
+
+        return action
+
+    async def retry_perform_action(
+        self, cleaned_dom: Dict, prompt: str, history: str, fail_reason: str
+    ) -> Optional[str]:
+        """
+        helper function to retry the action after a failure
+
+        Args:
+            `cleaned_dom`: The new cleaned DOM for the current page
+            `prompt`: The original prompt given by the user
+            `history`: The past action that failed
+            `fail_reason`: Reason for the failure for the action
+
+        This function will retry the action based on the current DOM and the past action. This should
+        most likely fix the issue of a stale element or a hallucinated component or something.
+
+        Return:
+            `output`: If the action was successful and automation is completed
+            `None`: The usual case where an action is performed
+        """
+
+        self.log.warning("The previous action failed, checking the latest page")
+        action = self.playwright_agent.process_action(
+            cleaned_dom=cleaned_dom,
+            user_prompt=prompt,
+            history=history,
+            fail_reason=fail_reason,
+        )
+
+        output = await self.generate_output(action=action, cleaned_dom=cleaned_dom, prompt=prompt)
+
+        if output:
+            return output
+
+        self.log.action(action)
+
+        if self.db_funcs:
+            self.db_funcs.push_to_episodic_memory(
+                session_id=self.session_id,
+                action=str(action),
+                page_url=str(self.page.url),
+            )
+
+        await perform_action(self.page, action)
