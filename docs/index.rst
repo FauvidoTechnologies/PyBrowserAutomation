@@ -42,3 +42,4 @@ The current software version is ``0.2.4`` which is NOT fully ready and under hea
    pyba.utils
    usage
    cli
+   pyba.core.lib.mode

@@ -302,3 +302,10 @@ Generated code example:
 
    if __name__ == '__main__':
        run_automation()
+
+.. _modes:
+
+Modes
+^^^^^^^^^
+
+Pyba supports two different modes for OSINT purposes specifically. Read on about them in the next page.
