@@ -84,10 +84,18 @@ class DFS(BaseEngine):
 
         self.max_depth = max_depth
         self.max_breadth = max_depth
+        self.old_plan = None        # A variable to hold the old plan for the planner agent to understand what has been done already
 
     async def run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """
         Run pyba in DFS mode.
+
+        Args:
+            `prompt`: The task assigned to DFS by the user
+            `automated_login_sites`: Login site name for pre-written scripts to run
+
+        The task is fed into the planner to get a plan which is then passed to the action models
+        to fetch an actionable element.
         """
         async with Stealth().use_async(async_playwright()) as p:
             self.browser = await p.chromium.launch(headless=self.headless_mode)
@@ -98,7 +106,7 @@ class DFS(BaseEngine):
 
             for steps in range(0, self.max_breadth):
                 # The breadth specifies the number of different plans we can execute
-                plan = self.planner_agent.generate(task=prompt)
+                plan = self.planner_agent.generate(task=prompt, old_plan=self.old_plan)
                 self.log.info(f"This is the plan for a DFS: {plan}")
 
                 for _ in range(0, self.max_depth):
@@ -112,11 +120,11 @@ class DFS(BaseEngine):
                     # Get an actionable element from the playwright agent
                     history = self.fetch_history()
                     action = self.fetch_action(
-                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
+                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=plan, history=history
                     )
                     # Check if the automation has finished and if so, get the output
                     output = await self.generate_output(
-                        action=action, cleaned_dom=cleaned_dom, prompt=prompt
+                        action=action, cleaned_dom=cleaned_dom, prompt=plan
                     )
                     if output:
                         await self.save_trace()
@@ -137,7 +145,7 @@ class DFS(BaseEngine):
                         cleaned_dom = await self.extract_dom()
                         output = await self.retry_perform_action(
                             cleaned_dom=cleaned_dom.to_dict(),
-                            prompt=prompt,
+                            prompt=plan,
                             history=history,
                             fail_reason=fail_reason,
                         )
@@ -147,6 +155,9 @@ class DFS(BaseEngine):
                             return output
                     # Picking the clean DOM now
                     cleaned_dom = await self.extract_dom()
+
+                self.log.warning(f"The maximum depth for the current plan has been reached, generating a new plan")
+                self.old_plan = plan
 
     def sync_run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """

@@ -39,17 +39,18 @@ class PlannerAgent(Retry):
 
         self.max_breadth = config["max_breadth"]
 
-    def _initialise_prompt(self, task: str):
+    def _initialise_prompt(self, task: str, old_plan: str = None):
         """
                 Initialise the prompt for the planner agent
 
         Args:
                 `task`: Task given by the user
+                `old_plan`: The previous plan in case of DFS mode
         """
         if self.mode == "BFS":
             return planner_general_prompt_BFS.format(task=task, max_plans=self.max_breadth)
         else:
-            return planner_general_prompt_DFS.format(task=task)
+            return planner_general_prompt_DFS.format(task=task, old_plan=old_plan)
 
     def _initialise_openai_arguments(
         self, system_instruction: str, task: str, model_name: str
@@ -194,16 +195,17 @@ class PlannerAgent(Retry):
                 self.log.error("Parsed object has neither 'plans' nor 'plan' attribute.")
                 return None
 
-    def generate(self, task: str) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
+    def generate(self, task: str, old_plan: str = None) -> Union[PlannerAgentOutputBFS, PlannerAgentOutputDFS]:
         """
         Endpoint to generate the plan(s) depending on the set mode (the agent encodes the mode)
+
+        Args:
+            `task`: The task provided by the user
+            `old_plan`: The previous plan if using DFS mode
 
         Function:
             - Takes in the user prompt which serves as the task for the model to perform
             - Depending on DFS or BFS mode generates plan(s)
-
-        # IDEALLY but I need to see what the response types are like first
         """
-
-        prompt = self._initialise_prompt(task=task)
+        prompt = self._initialise_prompt(task=task, old_plan=old_plan)
         return self._call_model(agent=self.agent, prompt=prompt)
