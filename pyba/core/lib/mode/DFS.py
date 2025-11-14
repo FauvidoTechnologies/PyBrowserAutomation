@@ -40,9 +40,6 @@ class DFS(BaseEngine):
         `database`: An instance of the Database class which will define all database specific configs
 
     Find these default values at `pyba/config.yaml`.
-
-        TODO: Another clean way to do this is to have one central class where all these values are defined then split that
-        into mutliple ones, but I personally prefer importing a new engine and starting a scan with that.
     """
 
     def __init__(

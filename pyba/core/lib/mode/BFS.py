@@ -27,15 +27,14 @@ class BFS(BaseEngine):
         `headless`: Choose if you want to run in the headless mode or not
         `handle_dependencies`: Choose if you want to automatically install dependencies during runtime
         `use_logger`: Choose if you want to use the logger (that is enable logging of data)
+        `max_depth`: The maximum depth to go into for each plan, where each level of depth corresponds to an action
+        `max_breadth`: The number of plans to execute one by one in depth
         `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
         `trace_save_directory`: The directory where you want the .zip file to be saved
 
         `database`: An instance of the Database class which will define all database specific configs
 
     Find these default values at `pyba/config.yaml`.
-
-    TODO: Another clean way to do this is to have one central class where all these values are defined then split that
-    into mutliple ones, but I personally prefer importing a new engine and starting a scan with that.
     """
 
     def __init__(
@@ -47,11 +46,13 @@ class BFS(BaseEngine):
         headless: bool = config["main_engine_configs"]["headless_mode"],
         handle_dependencies: bool = config["main_engine_configs"]["handle_dependencies"],
         use_logger: bool = config["main_engine_configs"]["use_logger"],
+        max_depth: int = config["main_engine_configs"]["max_depth"],
+        max_breadth: int = config["main_engine_configs"]["max_depth"],
         enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
         trace_save_directory: str = None,
         database: Database = None,
     ):
-        self.mode = "BFS"
+        self.mode = "DFS"
         # Passing the common setup to the BaseEngine
         super().__init__(
             headless=headless,
@@ -73,13 +74,18 @@ class BFS(BaseEngine):
         self.combined_selector = ", ".join(selectors)
         self.planner_agent = PlannerAgent(engine=self)
 
+        self.max_depth = max_depth
+        self.max_breadth = max_depth
+
     async def run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """
         Run pyba in DFS mode.
         """
         plan = self.planner_agent.generate(task=prompt)
-
         self.log.info(f"This is the plan for a DFS: {plan}")
+
+        # TODO: Finish this
+        pass
 
     def sync_run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """
