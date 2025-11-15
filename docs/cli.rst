@@ -148,7 +148,7 @@ Below are flags defined on the ``base_parser`` (available to both ``normal`` and
   * Example: ``-L instagram -L amazon``.
   * **NOTE:** automated login requires the corresponding credentials to be set in environment variables — see section 6.
 
-* ``--mode``, ``--mode (BFS|DFS)``
+* ``--op-mode``, ``--op-mode (BFS|DFS|Normal)``
   
   * Add this flag to define an exploratory case under the ``normal`` or ``database`` modes.
   * These will run pyba more like a ``planner->executor->analyst`` and it will do majority of the heavy lifting for your OSINT work.

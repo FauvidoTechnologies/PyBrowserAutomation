@@ -124,8 +124,8 @@ class ArgParser(ArgumentParser):
             "--op-mode",
             action="store",
             dest="operation_mode",
-            default="normal",
-            help="Select the operation mode from (DFS|BFS|normal), defaults at Normal mode",
+            default="Normal",
+            help="Select the operation mode from (DFS|BFS|Normal), defaults at Normal mode",
         )
 
         base_parser.add_argument(
@@ -268,9 +268,6 @@ class ArgParser(ArgumentParser):
                     f"Mode of operation '{options.operation_mode}' not recognized! Please choose from (BFS|DFS|Normal)"
                 )
                 sys.exit(0)
-
-        if options.max_depth or options.max_breadth and not options.operation_mode:
-            print("max-depth and max-breadth don't apply to the normal mode, continuing anyway")
 
         # passing all the keys directly to the run function because that handles it using the provider instance
         if options.mode == "database":

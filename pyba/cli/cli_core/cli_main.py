@@ -63,13 +63,13 @@ class CLIMain(ArgParser):
             "database": self.database,
         }
 
-        if self.mode in {"DFS", "BFS"}:
+        if self.arguments.operation_mode in {"DFS", "BFS"}:
             engine_configs["max_depth"] = self.arguments.max_depth
             engine_configs["max_depth"] = self.arguments.max_breadth
 
-        if self.mode == "BFS":
+        if self.arguments.operation_mode == "BFS":
             self.engine = BFS(**engine_configs)
-        elif self.mode == "DFS":
+        elif self.arguments.operation_mode == "DFS":
             self.engine = DFS(**engine_configs)
         else:
             self.engine = Engine(**engine_configs)
