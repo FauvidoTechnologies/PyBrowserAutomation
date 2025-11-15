@@ -71,6 +71,9 @@ Example:
 
     pyba normal -t "search for cheap headphones on amazon.in" --openai-api-key ""
 
+.. note::
+   You can use the ``normal`` subparser with two modes using the ``--mode`` command for exploratory analysis. Will be explained later.
+
 database
 --------
 
@@ -144,6 +147,22 @@ Below are flags defined on the ``base_parser`` (available to both ``normal`` and
   * Add this flag *repeatedly* to enable automated login to pre-configured sites (the tool prints which sites are enabled).
   * Example: ``-L instagram -L amazon``.
   * **NOTE:** automated login requires the corresponding credentials to be set in environment variables — see section 6.
+
+* ``--mode``, ``--mode (BFS|DFS)``
+  
+  * Add this flag to define an exploratory case under the ``normal`` or ``database`` modes.
+  * These will run pyba more like a ``planner->executor->analyst`` and it will do majority of the heavy lifting for your OSINT work.
+  * To choose between the two modes, read the documentation for the ``modes``
+
+* ``--max-depth``, ``--max-depth 5``
+  
+  * This flag specifies the maximum number of action to take under each plan in the exploratory cases
+  * Defaults at 5
+
+* ``--max-breadth``, ``--max-breadth 10``
+  
+  * This flag specifies the maximum number of plans to consider executing
+  * Defaults at 5
 
 ---
 
