@@ -121,7 +121,7 @@ class ArgParser(ArgumentParser):
         )
 
         base_parser.add_argument(
-            "--mode",
+            "--op-mode",
             action="store",
             dest="operation_mode",
             default="normal",
