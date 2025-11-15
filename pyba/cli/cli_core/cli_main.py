@@ -2,6 +2,7 @@ from typing import Optional
 
 from pyba import Engine
 from pyba.cli.cli_core.arg_parser import ArgParser
+from pyba.core.lib import DFS, BFS
 from pyba.database import Database
 
 
@@ -18,6 +19,8 @@ class CLIMain(ArgParser):
 
         self.generate_code = self.arguments.generate_code
         self.code_output_path = self.arguments.code_output_path
+
+        self.mode = self.arguments.operation_mode
 
     def initialise_database(self) -> Optional[Database]:
         """
@@ -60,7 +63,16 @@ class CLIMain(ArgParser):
             "database": self.database,
         }
 
-        self.engine = Engine(**engine_configs)
+        if self.mode in {"DFS", "BFS"}:
+            engine_configs["max_depth"] = self.arguments.max_depth
+            engine_configs["max_depth"] = self.arguments.max_breadth
+
+        if self.mode == "BFS":
+            self.engine = BFS(**engine_configs)
+        elif self.mode == "DFS":
+            self.engine = DFS(**engine_configs)
+        else:
+            self.engine = Engine(**engine_configs)
 
     def cli_sync_run(self):
         """

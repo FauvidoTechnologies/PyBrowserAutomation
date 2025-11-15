@@ -120,6 +120,30 @@ class ArgParser(ArgumentParser):
             help="The automated login engine names. Note: To use these you will need to set the username and password in your enviornment. Please read the man page.",
         )
 
+        base_parser.add_argument(
+            "--mode",
+            action="store",
+            dest="operation_mode",
+            default="normal",
+            help="Select the operation mode from (DFS|BFS|normal), defaults at Normal mode",
+        )
+
+        base_parser.add_argument(
+            "--max-depth",
+            action="store",
+            dest="max_depth",
+            default=5,
+            help="Define the maximum depth to go into for exploratory scans",
+        )
+
+        base_parser.add_argument(
+            "--max-breadth",
+            action="store",
+            dest="max_breadth",
+            default=5,
+            help="Define the maximum number of different ideas to explore in the exploratory mode",
+        )
+
         subparsers = self.add_subparsers(
             title="modes",
             dest="mode",
@@ -237,6 +261,16 @@ class ArgParser(ArgumentParser):
         if options.automated_login_sites:
             for site in options.automated_login_sites:
                 print(f"Automated login enabled for: {site}")
+
+        if options.operation_mode:
+            if options.operation_mode not in {"DFS", "BFS", "Normal"}:
+                print(
+                    f"Mode of operation '{options.operation_mode}' not recognized! Please choose from (BFS|DFS|Normal)"
+                )
+                sys.exit(0)
+
+        if options.max_depth or options.max_breadth and not options.operation_mode:
+            print("max-depth and max-breadth don't apply to the normal mode, continuing anyway")
 
         # passing all the keys directly to the run function because that handles it using the provider instance
         if options.mode == "database":
