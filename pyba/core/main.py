@@ -103,54 +103,29 @@ class Engine(BaseEngine):
                     self.automated_login_engine_classes.append(engine_class)
                 else:
                     raise UnknownSiteChosen(LoginEngine.available_engines())
+        try:
+            async with Stealth().use_async(async_playwright()) as p:
+                self.browser = await p.chromium.launch(headless=self.headless_mode)
 
-        async with Stealth().use_async(async_playwright()) as p:
-            self.browser = await p.chromium.launch(headless=self.headless_mode)
+                self.context = await self.get_trace_context()
+                self.page = await self.context.new_page()
+                cleaned_dom = await initial_page_setup(self.page)
 
-            self.context = await self.get_trace_context()
-            self.page = await self.context.new_page()
-            cleaned_dom = await initial_page_setup(self.page)
+                for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
+                    # If LoginEngines have been chosen then self.automated_login_engine_classes will be populated
+                    login_attempted_successfully = await self.attempt_login()
+                    if login_attempted_successfully:
+                        cleaned_dom = await self.successful_login_clean_and_get_dom()
+                        # Jump to the next iteration of the loop
+                        continue
 
-            for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
-                # If LoginEngines have been chosen then self.automated_login_engine_classes will be populated
-                login_attempted_successfully = await self.attempt_login()
-                if login_attempted_successfully:
-                    cleaned_dom = await self.successful_login_clean_and_get_dom()
-                    # Jump to the next iteration of the loop
-                    continue
-
-                # Get an actionable PlaywrightResponse from the models
-                history = self.fetch_history()
-                action = self.fetch_action(
-                    cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
-                )
-                output = await self.generate_output(
-                    action=action, cleaned_dom=cleaned_dom, prompt=prompt
-                )
-
-                if output:
-                    await self.save_trace()
-                    await self.shut_down()
-                    return output
-
-                self.log.action(action)
-
-                if self.db_funcs:
-                    self.db_funcs.push_to_episodic_memory(
-                        session_id=self.session_id, action=str(action), page_url=str(self.page.url)
+                    # Get an actionable PlaywrightResponse from the models
+                    history = self.fetch_history()
+                    action = self.fetch_action(
+                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
                     )
-                # If its not None, then perform it
-                value, fail_reason = await perform_action(self.page, action)
-
-                if value is None:
-                    # This means the action failed due to whatever reason. The best bet is to
-                    # pass in the latest cleaned_dom and get the output again
-                    cleaned_dom = await self.extract_dom()
-                    output = await self.retry_perform_action(
-                        cleaned_dom=cleaned_dom.to_dict(),
-                        prompt=prompt,
-                        history=history,
-                        fail_reason=fail_reason,
+                    output = await self.generate_output(
+                        action=action, cleaned_dom=cleaned_dom, prompt=prompt
                     )
 
                     if output:
@@ -158,11 +133,38 @@ class Engine(BaseEngine):
                         await self.shut_down()
                         return output
 
-                # Else, get the new DOM and restart loop
-                cleaned_dom = await self.extract_dom()
+                    self.log.action(action)
 
-        await self.save_trace()
-        await self.shut_down()
+                    if self.db_funcs:
+                        self.db_funcs.push_to_episodic_memory(
+                            session_id=self.session_id,
+                            action=str(action),
+                            page_url=str(self.page.url),
+                        )
+                    # If its not None, then perform it
+                    value, fail_reason = await perform_action(self.page, action)
+
+                    if value is None:
+                        # This means the action failed due to whatever reason. The best bet is to
+                        # pass in the latest cleaned_dom and get the output again
+                        cleaned_dom = await self.extract_dom()
+                        output = await self.retry_perform_action(
+                            cleaned_dom=cleaned_dom.to_dict(),
+                            prompt=prompt,
+                            history=history,
+                            fail_reason=fail_reason,
+                        )
+
+                        if output:
+                            await self.save_trace()
+                            await self.shut_down()
+                            return output
+
+                    # Else, get the new DOM and restart loop
+                    cleaned_dom = await self.extract_dom()
+        finally:
+            await self.save_trace()
+            await self.shut_down()
 
     def sync_run(
         self, prompt: str = None, automated_login_sites: List[str] = None

@@ -94,75 +94,85 @@ class DFS(BaseEngine):
         The task is fed into the planner to get a plan which is then passed to the action models
         to fetch an actionable element.
         """
-        async with Stealth().use_async(async_playwright()) as p:
-            self.browser = await p.chromium.launch(headless=self.headless_mode)
+        try:
+            async with Stealth().use_async(async_playwright()) as p:
+                self.browser = await p.chromium.launch(headless=self.headless_mode)
 
-            self.context = await self.get_trace_context()
-            self.page = await self.context.new_page()
-            cleaned_dom = await initial_page_setup(self.page)
+                self.context = await self.get_trace_context()
+                self.page = await self.context.new_page()
+                cleaned_dom = await initial_page_setup(self.page)
 
-            for steps in range(0, self.max_breadth):
-                # The breadth specifies the number of different plans we can execute
-                plan = self.planner_agent.generate(task=prompt, old_plan=self.old_plan)
-                self.log.info(f"This is the plan for a DFS: {plan}")
+                for steps in range(0, self.max_breadth):
+                    # The breadth specifies the number of different plans we can execute
+                    plan = self.planner_agent.generate(task=prompt, old_plan=self.old_plan)
+                    self.log.info(f"This is the plan for a DFS: {plan}")
 
-                for _ in range(0, self.max_depth):
-                    # The depth is the number of actions for each plan
-                    # First check for login
-                    login_attempted_successfully = await self.attempt_login()
-                    # We'll count logging in as another step in the process
-                    if login_attempted_successfully:
-                        cleaned_dom = await self.successful_login_clean_and_get_dom()
-                        continue
-                    # Get an actionable element from the playwright agent
-                    history = self.fetch_history()
-                    action = self.fetch_action(
-                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=plan, history=history
-                    )
-                    # Check if the automation has finished and if so, get the output
-                    output = await self.generate_output(
-                        action=action, cleaned_dom=cleaned_dom, prompt=plan
-                    )
-                    if output:
-                        await self.save_trace()
-                        await self.shut_down()
-                        return output
-                    # If not, store the action and perform the action
-                    self.log.action(action)
-                    if self.db_funcs:
-                        self.db_funcs.push_to_episodic_memory(
-                            session_id=self.session_id,
-                            action=str(action),
-                            page_url=str(self.page.url),
+                    for _ in range(0, self.max_depth):
+                        # The depth is the number of actions for each plan
+                        # First check for login
+                        login_attempted_successfully = await self.attempt_login()
+                        # We'll count logging in as another step in the process
+                        if login_attempted_successfully:
+                            cleaned_dom = await self.successful_login_clean_and_get_dom()
+                            continue
+                        # Get an actionable element from the playwright agent
+                        history = self.fetch_history()
+                        action = self.fetch_action(
+                            cleaned_dom=cleaned_dom.to_dict(), user_prompt=plan, history=history
                         )
-                    value, fail_reason = await perform_action(self.page, action)
-                    if value is None:
-                        # This means the action failed due to whatever reason. The best bet is to
-                        # pass in the latest cleaned_dom and get the output again
-                        cleaned_dom = await self.extract_dom()
-                        output = await self.retry_perform_action(
-                            cleaned_dom=cleaned_dom.to_dict(),
-                            prompt=plan,
-                            history=history,
-                            fail_reason=fail_reason,
+                        # Check if the automation has finished and if so, get the output
+                        output = await self.generate_output(
+                            action=action, cleaned_dom=cleaned_dom, prompt=plan
                         )
                         if output:
                             await self.save_trace()
                             await self.shut_down()
                             return output
-                    # Picking the clean DOM now
-                    cleaned_dom = await self.extract_dom()
+                        # If not, store the action and perform the action
+                        self.log.action(action)
+                        if self.db_funcs:
+                            self.db_funcs.push_to_episodic_memory(
+                                session_id=self.session_id,
+                                action=str(action),
+                                page_url=str(self.page.url),
+                            )
+                        value, fail_reason = await perform_action(self.page, action)
+                        if value is None:
+                            # This means the action failed due to whatever reason. The best bet is to
+                            # pass in the latest cleaned_dom and get the output again
+                            cleaned_dom = await self.extract_dom()
+                            output = await self.retry_perform_action(
+                                cleaned_dom=cleaned_dom.to_dict(),
+                                prompt=plan,
+                                history=history,
+                                fail_reason=fail_reason,
+                            )
+                            if output:
+                                await self.save_trace()
+                                await self.shut_down()
+                                return output
+                        # Picking the clean DOM now
+                        cleaned_dom = await self.extract_dom()
 
-                self.log.warning(
-                    "The maximum depth for the current plan has been reached, generating a new plan"
-                )
-                self.old_plan = plan
+                    self.log.warning(
+                        "The maximum depth for the current plan has been reached, generating a new plan"
+                    )
+                    self.old_plan = plan
+        finally:
+            await self.save_trace()
+            await self.shut_down()
 
     def sync_run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
         """
         Sync endpoint for running the above function
         """
-        output = asyncio.run(self.run(prompt=prompt, automated_login_sites=automated_login_sites))
+        try:
+            output = asyncio.run(
+                self.run(prompt=prompt, automated_login_sites=automated_login_sites)
+            )
 
-        if output:
-            return output
+            if output:
+                return output
+        except KeyboardInterrupt:
+            # This is a forced shutdown, silently let it slip
+            pass

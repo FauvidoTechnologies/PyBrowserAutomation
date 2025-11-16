@@ -156,16 +156,24 @@ class BaseEngine:
         """
         if self.tracing:
             trace_path = self.trace_dir / f"{self.session_id}_trace.zip"
-            self.log.info(f"This is the tracepath: {trace_path}")
-            await self.context.tracing.stop(path=str(trace_path))
+            try:
+                await self.context.tracing.stop(path=str(trace_path))
+                self.log.info(f"This is the tracepath: {trace_path}")
+            except Exception:
+                # Abrupt browser closure
+                pass
 
     async def shut_down(self):
         """
         Function to cleanly close the existing browsers and contexts. This also saves
         the traces in the provided trace_dir by the user or the default.
         """
-        await self.context.close()
-        await self.browser.close()
+        try:
+            await self.context.close()
+            await self.browser.close()
+        except Exception:
+            # Context/browser have already been closed
+            pass
 
     def generate_code(self, output_path: str) -> bool:
         """
