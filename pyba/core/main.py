@@ -30,7 +30,7 @@ class Engine(BaseEngine):
         `use_logger`: Choose if you want to use the logger (that is enable logging of data)
         `enable_tracing`: Choose if you want to enable tracing. This will create a .zip file which you can use in traceviewer
         `trace_save_directory`: The directory where you want the .zip file to be saved
-
+        `max_depth`: The maximum number of actions that you want the model to execute
         `database`: An instance of the Database class which will define all database specific configs
 
     Find these default values at `pyba/config.yaml`.
@@ -52,6 +52,7 @@ class Engine(BaseEngine):
         use_logger: bool = config["main_engine_configs"]["use_logger"],
         enable_tracing: bool = config["main_engine_configs"]["enable_tracing"],
         trace_save_directory: str = None,
+        max_depth: int = config["main_engine_configs"]["max_iteration_steps"],
         database: Database = None,
     ):
         self.mode = "Normal"
@@ -70,6 +71,7 @@ class Engine(BaseEngine):
             gemini_api_key=gemini_api_key,
         )
 
+        self.max_depth = max_depth
         # session_id stays here becasue BaseEngine will be inherited by many
         self.session_id = uuid.uuid4().hex
 
@@ -111,7 +113,7 @@ class Engine(BaseEngine):
                 self.page = await self.context.new_page()
                 cleaned_dom = await initial_page_setup(self.page)
 
-                for steps in range(0, config["main_engine_configs"]["max_iteration_steps"]):
+                for steps in range(0, self.max_depth):
                     # If LoginEngines have been chosen then self.automated_login_engine_classes will be populated
                     login_attempted_successfully = await self.attempt_login()
                     if login_attempted_successfully:
