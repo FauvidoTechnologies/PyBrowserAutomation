@@ -3,6 +3,8 @@ import time
 from types import SimpleNamespace
 from typing import Dict, List, Union, Any
 
+from pydantic import BaseModel
+
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.logger import get_logger
 from pyba.utils.prompts import general_prompt, output_prompt
@@ -213,6 +215,7 @@ class PlaywrightAgent(Retry):
         user_prompt: str,
         history: List[str] = None,
         fail_reason: str = None,
+        extraction_format: BaseModel = None,
     ) -> PlaywrightResponse:
         """
         Method to process the DOM and provide an actionable playwright response
@@ -226,6 +229,7 @@ class PlaywrightAgent(Retry):
             `user_prompt`: The instructions given by the user
             `history`: An episodic memory of all the successfully executed tasks
             `fail_reason`: Holds the fail-reason should the previous task fail
+            `extraction_format`: The extraction format for the task
 
             We're assuming this to be well explained. In later versions we'll
             add one more layer on top for plan generation and better commands
@@ -241,6 +245,7 @@ class PlaywrightAgent(Retry):
             fail_reason=fail_reason,
         )
 
+        # Now here we need to think
         return self._call_model(agent=self.action_agent, prompt=prompt, agent_type="action")
 
     def get_output(self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str) -> str:

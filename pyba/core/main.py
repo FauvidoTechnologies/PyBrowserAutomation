@@ -4,6 +4,7 @@ from typing import List, Union
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
+from pydantic import BaseModel
 
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.mode.base import BaseEngine
@@ -78,18 +79,47 @@ class Engine(BaseEngine):
         selectors = tuple(config["process_config"]["selectors"])
         self.combined_selector = ", ".join(selectors)
 
-    async def run(self, prompt: str = None, automated_login_sites: List[str] = None):
+    async def run(
+        self,
+        prompt: str = None,
+        automated_login_sites: List[str] = None,
+        extraction_format: BaseModel = None,
+    ):
         """
         The most basic implementation for the run function
 
         Args:
-            `prompt`: The user's instructions
-                Right now we're assuming that the user's prompt is well defined. In later
-                versions we'll come up with a fix for that as well.
+            `prompt`: The user's instructions. This is a well defined instruction.
+            `automated_login_sites`: A list of sites that you want the model to automatically login to using env credentials
+            `extraction_format`: A pydantic BaseModel which defines the extraction format for any data extraction
+
+        Note:
+
+        The `extraction_format` will be decided based on every action. For example:
+
+        ```python3
+        from pydantic import BaseModel
+        from pyba import Engine
+
+        task = "Go to hackernews. For each post, extract the title, number of upvotes and comments, and the description too"
+
+        class Output(BaseModel):
+            # Using optional is a good idea in case the things you're looking for don't exist
+            title: Optional[str],
+            num_upvotes: Optional[int],
+            num_comments: Optional[int],
+            desc: Optional[str]
+
+        engine = Engine(**kwargs)
+
+        await engine.run(task, extraction_format=Output)
+        ```
+
+        would return data **during** the execution, and now once it finishes. It will dump it in the database as well, and it
+        decides if data needs to be extracted on an action basis.
+
+        Using this feature will NOT cost you any more tokens than usual.
         """
-
-        # print(type(self.planner_agent.generate(task=prompt)))     List in case of BFS and string in case of DFS
-
         if prompt is None:
             raise PromptNotPresent()
 
@@ -121,10 +151,13 @@ class Engine(BaseEngine):
                         # Jump to the next iteration of the loop
                         continue
 
-                    # Get an actionable PlaywrightResponse from the models
+                    # Get an actionable PlaywrightResponse from the models, along with `extracted results` if any
                     history = self.fetch_history()
                     action = self.fetch_action(
-                        cleaned_dom=cleaned_dom.to_dict(), user_prompt=prompt, history=history
+                        cleaned_dom=cleaned_dom.to_dict(),
+                        user_prompt=prompt,
+                        history=history,
+                        extraction_format=extraction_format,
                     )
                     output = await self.generate_output(
                         action=action, cleaned_dom=cleaned_dom, prompt=prompt
@@ -169,12 +202,18 @@ class Engine(BaseEngine):
             await self.shut_down()
 
     def sync_run(
-        self, prompt: str = None, automated_login_sites: List[str] = None
+        self,
+        prompt: str = None,
+        automated_login_sites: List[str] = None,
+        extraction_format: BaseModel = None,
     ) -> Union[str, None]:
         """
         Sync endpoint for running the above function
         """
-        output = asyncio.run(self.run(prompt=prompt, automated_login_sites=automated_login_sites))
+        output = asyncio.run(
+            self.run(prompt=prompt, automated_login_sites=automated_login_sites),
+            extraction_format=extraction_format,
+        )
 
         if output:
             return output

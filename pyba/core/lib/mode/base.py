@@ -2,6 +2,8 @@ import asyncio
 import json
 from typing import Dict, Optional
 
+from pydantic import BaseModel
+
 from pyba.core.agent import PlaywrightAgent
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
@@ -308,7 +310,13 @@ class BaseEngine:
 
         return history
 
-    def fetch_action(self, cleaned_dom: Dict, user_prompt: str, history: str):
+    def fetch_action(
+        self,
+        cleaned_dom: Dict,
+        user_prompt: str,
+        history: str,
+        extraction_format: BaseModel = None,
+    ):
         """
         Helper function to fetch an actionable PlaywrightResponse element
 
@@ -316,6 +324,9 @@ class BaseEngine:
             `cleaned_dom`: The DOM for the current page
             `user_prompt`: The actual task given by the user
             `history`: The last action performed by the model
+            `extraction_format`: The extraction format requested by the user.
+
+        For an explanation of the `extraction_format` read the main file documentation.
 
         Returns:
             `action`: An actionable playwrightresponse element
@@ -323,7 +334,10 @@ class BaseEngine:
 
         try:
             action = self.playwright_agent.process_action(
-                cleaned_dom=cleaned_dom, user_prompt=user_prompt, history=history
+                cleaned_dom=cleaned_dom,
+                user_prompt=user_prompt,
+                history=history,
+                extraction_format=extraction_format,
             )
         except Exception as e:
             self.log.error(f"something went wrong in obtaining the response: {e}")
