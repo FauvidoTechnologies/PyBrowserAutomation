@@ -1,10 +1,12 @@
 import random
 
 
-class Retry:
+class BaseAgent:
     """
-    Class to implement the exponential backoff and retry logic. Note that this backoff and retry will be
-    blocking for that specific context.
+    The base class for all Agents to define common methods
+
+        Contains methods for exponential backoff and retry as well
+        Note: this backoff and retry will be blocking for that specific context.
 
     Defines the following variables:
 

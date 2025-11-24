@@ -5,14 +5,14 @@ from typing import Dict, List, Union, Any
 
 from pydantic import BaseModel
 
+from pyba.core.agent.base_agent import BaseAgent
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.logger import get_logger
 from pyba.utils.prompts import general_prompt, output_prompt
-from pyba.utils.retry import Retry
 from pyba.utils.structure import PlaywrightResponse
 
 
-class PlaywrightAgent(Retry):
+class PlaywrightAgent(BaseAgent):
     """
     Defines the playwright agent's actions
 

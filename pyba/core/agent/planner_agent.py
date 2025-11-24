@@ -2,17 +2,17 @@ import json
 import time
 from typing import Union, Dict, List, Any
 
+from pyba.core.agent.base_agent import BaseAgent
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.logger import get_logger
 from pyba.utils.load_yaml import load_config
 from pyba.utils.prompts import planner_general_prompt_DFS, planner_general_prompt_BFS
-from pyba.utils.retry import Retry
 from pyba.utils.structure import PlannerAgentOutputBFS, PlannerAgentOutputDFS
 
 config = load_config("general")["main_engine_configs"]
 
 
-class PlannerAgent(Retry):
+class PlannerAgent(BaseAgent):
     """
     Planner agent for DFS and BFS modes under exploratory cases. This is inheriting off
     from the Retry class as well and supports all agents under LLM_factory.
