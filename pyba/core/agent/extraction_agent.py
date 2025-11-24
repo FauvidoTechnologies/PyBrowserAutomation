@@ -14,7 +14,7 @@ class ExtractionAgent(BaseAgent):
     """
 
     def __init__(self):
-        pass
+        super().__init__()  # Initialising the base params from BaseAgent
 
     async def extract_information(
         self, extraction_format: BaseModel, page_contents: Dict[str, str]

@@ -1,10 +1,8 @@
 import json
 import time
-from typing import Union, Dict, List, Any
+from typing import Union, Any
 
 from pyba.core.agent.base_agent import BaseAgent
-from pyba.core.agent.llm_factory import LLMFactory
-from pyba.logger import get_logger
 from pyba.utils.load_yaml import load_config
 from pyba.utils.prompts import planner_general_prompt_DFS, planner_general_prompt_BFS
 from pyba.utils.structure import PlannerAgentOutputBFS, PlannerAgentOutputDFS
@@ -25,18 +23,12 @@ class PlannerAgent(BaseAgent):
         """
         Initialises the right agent from the LLMFactory
 
-        - Uses the .get_planner_agent() endpoint in the LLMFactory to initialise the right system prompts
+        Args:
+            `engine`: holds all the arguments from the user including the mode
         """
-        super().__init__()  # Initialising the retry variables
+        super().__init__(engine=engine)  # Initialising the base params from BaseAgent
         self.attempt_number = 1
-        self.engine = engine
-        self.llm_factory = LLMFactory(engine=self.engine)  # The engine variable holds the mode
-
-        self.log = get_logger()
-        self.mode = self.engine.mode
-
         self.agent = self.llm_factory.get_planner_agent()
-
         self.max_breadth = config["max_breadth"]
 
     def _initialise_prompt(self, task: str, old_plan: str = None):
@@ -51,33 +43,6 @@ class PlannerAgent(BaseAgent):
             return planner_general_prompt_BFS.format(task=task, max_plans=self.max_breadth)
         else:
             return planner_general_prompt_DFS.format(task=task, old_plan=old_plan)
-
-    def _initialise_openai_arguments(
-        self, system_instruction: str, task: str, model_name: str
-    ) -> Dict[str, List[Dict[str, str]]]:
-        """
-        Initialises the arguments for OpenAI agents
-
-        Args:
-            `system_instruction`: The system instruction for the agent
-            `task`: The current task for the model to perform
-            `model_name`: The OpenAI model name
-
-        Returns:
-            An arguments dictionary which can be directly passed to OpenAI agents
-        """
-
-        messages = [
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": task},
-        ]
-
-        kwargs = {
-            "model": model_name,
-            "messages": messages,
-        }
-
-        return kwargs
 
     def _call_model(self, agent: Any, prompt: str) -> Any:
         """
@@ -95,7 +60,7 @@ class PlannerAgent(BaseAgent):
         if self.engine.provider == "openai":
             arguments = self._initialise_openai_arguments(
                 system_instruction=agent["system_instruction"],
-                task=prompt,
+                prompt=prompt,
                 model_name=agent["model"],
             )
 

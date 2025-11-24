@@ -211,8 +211,11 @@ class Engine(BaseEngine):
         Sync endpoint for running the above function
         """
         output = asyncio.run(
-            self.run(prompt=prompt, automated_login_sites=automated_login_sites),
-            extraction_format=extraction_format,
+            self.run(
+                prompt=prompt,
+                automated_login_sites=automated_login_sites,
+                extraction_format=extraction_format,
+            )
         )
 
         if output:

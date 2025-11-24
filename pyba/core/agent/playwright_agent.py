@@ -6,8 +6,6 @@ from typing import Dict, List, Union, Any
 from pydantic import BaseModel
 
 from pyba.core.agent.base_agent import BaseAgent
-from pyba.core.agent.llm_factory import LLMFactory
-from pyba.logger import get_logger
 from pyba.utils.prompts import general_prompt, output_prompt
 from pyba.utils.structure import PlaywrightResponse
 
@@ -24,16 +22,10 @@ class PlaywrightAgent(BaseAgent):
     def __init__(self, engine) -> None:
         """
         Args:
-            `engine`: holds all the arguments from the user
-
-        Initialises the agents using the `.get_agent()` entrypoint from the LLMFactory
+            `engine`: holds all the arguments from the user including the mode
         """
-        super().__init__()  # Initiaising the retry variables
+        super().__init__(engine=engine)  # Initialising the base params from BaseAgent
         self.attempt_number = 1
-        self.engine = engine
-        self.llm_factory = LLMFactory(engine=self.engine)
-
-        self.log = get_logger()
         self.action_agent, self.output_agent = self.llm_factory.get_agent()
 
     def _initialise_prompt(
@@ -71,33 +63,6 @@ class PlaywrightAgent(BaseAgent):
         prompt = main_instruction.format(**cleaned_dom)
 
         return prompt
-
-    def _initialise_openai_arguments(
-        self, system_instruction: str, prompt: str, model_name: str
-    ) -> Dict[str, List[Dict[str, str]]]:
-        """
-        Initialises the arguments for OpenAI agents
-
-        Args:
-            `system_instruction`: The system instruction for the agent
-            `prompt`: The current prompt for the agent
-            `model_name`: The OpenAI model name
-
-        Returns:
-            An arguments dictionary which can be directly passed to OpenAI agents
-        """
-
-        messages = [
-            {"role": "system", "content": system_instruction},
-            {"role": "user", "content": prompt},
-        ]
-
-        kwargs = {
-            "model": model_name,
-            "messages": messages,
-        }
-
-        return kwargs
 
     def _call_model(self, agent: Any, prompt: str, agent_type: str) -> Any:
         """
