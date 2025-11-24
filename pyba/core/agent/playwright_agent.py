@@ -1,5 +1,4 @@
 import json
-import time
 from types import SimpleNamespace
 from typing import Dict, List, Union, Any
 
@@ -25,7 +24,6 @@ class PlaywrightAgent(BaseAgent):
             `engine`: holds all the arguments from the user including the mode
         """
         super().__init__(engine=engine)  # Initialising the base params from BaseAgent
-        self.attempt_number = 1
         self.action_agent, self.output_agent = self.llm_factory.get_agent()
 
     def _initialise_prompt(
@@ -79,28 +77,10 @@ class PlaywrightAgent(BaseAgent):
         Uses the attempt_number to give ou
         """
         if self.engine.provider == "openai":
-            arguments = self._initialise_openai_arguments(
-                system_instruction=agent["system_instruction"],
+            response = self.handle_openai_execution(
+                agent=agent,
                 prompt=prompt,
-                model_name=agent["model"],
             )
-
-            while True:
-                try:
-                    response = agent["client"].chat.completions.parse(
-                        **arguments, response_format=agent["response_format"]
-                    )
-                    self.attempt_number = 1
-                    break
-                except Exception:
-                    # If we hit a rate limit, calculate the time to wait and retry
-                    wait_time = self.calculate_next_time(self.attempt_number)
-                    self.log.warning(
-                        f"Hit the rate limit for OpenAI, retrying in {wait_time} seconds"
-                    )
-                    time.sleep(wait_time)  # wait_time is in seconds
-                    self.attempt_number += 1
-
             parsed_json = json.loads(response.choices[0].message.content)
 
             # Parse based on agent type
@@ -110,19 +90,7 @@ class PlaywrightAgent(BaseAgent):
                 return str(parsed_json.get("output"))
 
         elif self.engine.provider == "vertexai":  # VertexAI logic
-            while True:
-                try:
-                    response = agent.send_message(prompt)
-                    self.attempt_number = 1
-                    break
-                except Exception:
-                    wait_time = self.calculate_next_time(self.attempt_number)
-                    self.log.warning(
-                        f"Hit the rate limit for VertexAI, retrying in {wait_time} seconds"
-                    )
-                    time.sleep(wait_time)
-                    self.attempt_number += 1
-
+            response = self.handle_vertexai_execution(agent=agent, prompt=prompt)
             try:
                 parsed_object = getattr(
                     response, "output_parsed", getattr(response, "parsed", None)
@@ -148,29 +116,7 @@ class PlaywrightAgent(BaseAgent):
                 # If we have a response which cannot be parsed, it MUST be a None value
 
         else:  # Using gemini
-            gemini_config = {
-                "response_mime_type": "application/json",
-                "response_json_schema": agent["response_format"].model_json_schema(),
-                "system_instruction": agent["system_instruction"],
-            }
-
-            while True:
-                try:
-                    response = agent["client"].models.generate_content(
-                        model=agent["model"],
-                        contents=prompt,
-                        config=gemini_config,
-                    )
-                    self.attempt_number = 1
-                    break
-                except Exception:
-                    wait_time = self.calculate_next_time(self.attempt_number)
-                    self.log.warning(
-                        f"Hit the rate limit for Gemini, retrying in {wait_time} seconds"
-                    )
-                    time.sleep(wait_time)
-                    self.attempt_number += 1
-
+            response = self.handle_gemini_execution(agent=agent, prompt=prompt)
             action = agent["response_format"].model_validate_json(response.text)
             return action.actions[0]
 

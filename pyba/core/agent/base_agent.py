@@ -1,5 +1,6 @@
 import random
-from typing import Literal, Dict, List
+import time
+from typing import Literal, Dict, List, Any
 
 from pyba.core.agent.llm_factory import LLMFactory
 from pyba.logger import get_logger
@@ -17,7 +18,8 @@ class BaseAgent:
     `exponential_base`: 2 (we're using base 2)
     `base_timeout`: 1 second
     `max_backoff_time`: 60 seconds
-    `LLMFactory`: The internal agent call is made by agent itself.
+    `attempt_number`: The current attempt number initialised to 1
+    `LLMFactory`: The internal agent call is made by agent itself
     `log`: The logger for the agents
     """
 
@@ -25,6 +27,7 @@ class BaseAgent:
         self.base = 2
         self.base_timeout = 1
         self.max_backoff_time = 60
+        self.attempt_number = 1
 
         self.engine = engine
         self.llm_factory = LLMFactory(engine=self.engine)
@@ -57,6 +60,102 @@ class BaseAgent:
         }
 
         return kwargs
+
+    def handle_openai_execution(self, agent: Any, prompt: str):
+        """
+        Helper method to handle OpenAI execution
+
+        Args:
+            `agent`: The agent to use (action_agent or output_agent)
+            `prompt`: The fully formatted prompt string
+
+        Returns:
+            `response`: The raw response from the model. The exact required values
+            are expected to be extraced within each agent
+        """
+        arguments = self._initialise_openai_arguments(
+            system_instruction=agent["system_instruction"],
+            prompt=prompt,
+            model_name=agent["model"],
+        )
+
+        while True:
+            try:
+                response = agent["client"].chat.completions.parse(
+                    **arguments, response_format=agent["response_format"]
+                )
+                self.attempt_number = 1
+                break
+            except Exception:
+                # If we hit a rate limit, calculate the time to wait and retry
+                wait_time = self.calculate_next_time(self.attempt_number)
+                self.log.warning(f"Hit the rate limit for OpenAI, retrying in {wait_time} seconds")
+                time.sleep(wait_time)  # wait_time is in seconds
+                self.attempt_number += 1
+
+        return response
+
+    def handle_vertexai_execution(self, agent: Any, prompt: str):
+        """
+        Helper method to handle VertexAI execution
+
+        Args:
+            `agent`: The agent to use (action_agent or output_agent)
+            `prompt`: The fully formatted prompt string
+
+        Returns:
+            `response`: The raw response from the model. The exact required values
+            are expected to be extraced within each agent
+        """
+        while True:
+            try:
+                response = agent.send_message(prompt)
+                self.attempt_number = 1
+                break
+            except Exception:
+                wait_time = self.calculate_next_time(self.attempt_number)
+                self.log.warning(
+                    f"Hit the rate limit for VertexAI, retrying in {wait_time} seconds"
+                )
+                time.sleep(wait_time)
+                self.attempt_number += 1
+
+        return response
+
+    def handle_gemini_execution(self, agent: Any, prompt: str):
+        """
+        Helper method to handle gemini's execution
+
+        Args:
+            `agent`: The agent to use (action_agent or output_agent)
+            `prompt`: The fully formatted prompt string
+
+        Returns:
+            `response`: The raw response from the model. The exact required values
+            are expected to be extraced within each agent
+        """
+        gemini_config = {
+            "response_mime_type": "application/json",
+            "response_json_schema": agent["response_format"].model_json_schema(),
+            "system_instruction": agent["system_instruction"],
+        }
+
+        while True:
+            try:
+                response = agent["client"].models.generate_content(
+                    model=agent["model"],
+                    contents=prompt,
+                    config=gemini_config,
+                )
+                self.attempt_number = 1
+                break
+            except Exception:
+                wait_time = self.calculate_next_time(self.attempt_number)
+                self.log.warning(f"Hit the rate limit for Gemini, retrying in {wait_time} seconds")
+                time.sleep(wait_time)
+                self.attempt_number += 1
+
+        return response
 
     def calculate_next_time(self, attempt_number):
         """
