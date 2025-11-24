@@ -1,4 +1,4 @@
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 
 # VertexAI and gemini
 from google import genai
@@ -6,6 +6,7 @@ from google.genai.types import GenerateContentConfig
 
 # OpenAI
 from openai import OpenAI
+from pydantic import BaseModel
 
 from pyba.utils.exceptions import IncorrectMode
 from pyba.utils.load_yaml import load_config
@@ -14,12 +15,14 @@ from pyba.utils.prompts import (
     output_system_instruction,
     BFS_planner_system_instruction,
     DFS_planner_system_instruction,
+    extraction_system_instruction,
 )
 from pyba.utils.structure import (
     PlaywrightResponse,
     OutputResponseFormat,
     PlannerAgentOutputBFS,
     PlannerAgentOutputDFS,
+    GeneralExtractionResponse,
 )
 
 config = load_config("general")
@@ -186,6 +189,27 @@ class LLMFactory:
 
         return planner_agent
 
+    def create_extraction_agent(self, init_method, response_format=None):
+        """
+        Helper function to return the appropriate extraction agent
+
+        Args:
+            `init_method`: Function to initialise the respective LLM agent
+            `response_format`: The response output type for the extraction agent
+        """
+
+        if response_format:
+            extraction_agent = init_method(
+                system_instruction=extraction_system_instruction, response_schema=response_format
+            )
+        else:
+            extraction_agent = init_method(
+                system_instruction=extraction_system_instruction,
+                response_schema=GeneralExtractionResponse,
+            )
+
+        return extraction_agent
+
     def get_agent(self) -> Tuple:
         """
         Endpoint to return the agents depending on the LLM called for
@@ -231,3 +255,22 @@ class LLMFactory:
         planner_agent = self.create_planner_agent(init_method)
 
         return planner_agent
+
+    def get_extraction_agent(self, extraction_format: Optional[BaseModel]):
+        """
+        Endpoint to return the extraction agent depending on the LLM called for.
+
+        Args:
+            `extraction_format`: This is the extraction format which is expected, it can be `None`
+        """
+
+        if self.engine.provider == "openai":
+            init_method = self._initialize_openai_agent
+        elif self.engine.provider == "vertexai":
+            init_method = self._initialize_vertexai_agent
+        else:
+            init_method = self._initialize_gemini_agent
+
+        agents = self.create_extraction_agent(init_method, response_format=extraction_format)
+
+        return agents

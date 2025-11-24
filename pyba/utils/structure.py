@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from pydantic import BaseModel, Field
 
@@ -192,4 +192,20 @@ class PlannerAgentOutputDFS(BaseModel):
 
     plan: str = Field(
         ..., description="A single plan to be executed in depth to achieve the required goal"
+    )
+
+
+class GeneralExtractionResponse(BaseModel):
+    """
+    The general extraction agent output. This is used when the user hasn't specified an
+    output format themselves
+    """
+
+    imp_visible_text: str = Field(
+        ...,
+        description="A bunch of visible text on the current page which matches what the user is asking for",
+    )
+    general_dict: Optional[Dict[str, str]] = Field(
+        ...,
+        description="An optional dictionay in case the user's output requirement suits this better",
     )
