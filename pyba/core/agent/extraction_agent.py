@@ -1,3 +1,6 @@
+import json
+import threading
+
 from pydantic import BaseModel
 
 from pyba.core.agent.base_agent import BaseAgent
@@ -33,13 +36,69 @@ class ExtractionAgent(BaseAgent):
         """
         return general_prompt.format(task=task, actual_text=actual_text)
 
-    def run_threaded_info_extraction(self, task: str, actual_text: str):
+    def info_extraction(self, task: str, actual_text: str) -> None:
         """
-        Threaded function to extract data from the current page
+        Function to extract data from the current page
 
         Args:
-                        `task`: The user's defined task
+            `task`: The user's defined task
             `actual_text`: The current page text
+
+        This function for now only Logs the value and doesn't return anything
         """
 
-        pass
+        # THE FINAL PIECE OF THE PUZZLE
+        prompt = self._initialise_prompt(task=task, actual_text=actual_text)
+
+        if self.engine.provider == "openai":
+            response = self.handle_openai_execution(
+                agent=self.agent,
+                prompt=prompt,
+            )
+            try:
+                parsed_json = json.loads(response.choices[0].message.content)
+                self.log.info(f"Extracted content: {parsed_json}")
+            except Exception as e:
+                self.log.error(f"Unable to parse the outoput from OpenAI response: {e}")
+                return None
+        elif self.engine.provider == "vertexai":
+            response = self.handle_vertexai_execution(agent=self.agent, prompt=prompt)
+
+            try:
+                parsed_object = getattr(
+                    response, "output_parsed", getattr(response, "parsed", None)
+                )
+
+                if not parsed_object:
+                    self.log.error("No parsed object found in VertexAI response.")
+                    return None
+
+                self.log.info(f"Extracted content: {parsed_object}")
+
+            except Exception as e:
+                if not response:
+                    self.log.error(f"Unable to parse the output from VertexAI response: {e}")
+                # If we have a response which cannot be parsed, it MUST be a None value
+        else:  # Using gemini
+            response = self.handle_gemini_execution(agent=self.agent, prompt=prompt)
+            parsed_object = self.agent["response_format"].model_validate_json(response.text)
+            self.log.info(f"Extracted content: {parsed_object}")
+
+    def run_threaded_info_extraction(self, task: str, actual_text: str):
+        """
+                Fuction to thread the execution of the `info_extraction` function
+
+                Args:
+            `task`: The user's defined task
+            `actual_text`: The current page text
+
+        This function creates a separate thread for calling the agent on the current page
+        and extracting the relevant information with the right format.
+        """
+
+        thread = threading.Thread(
+            target=self.info_extraction,
+            args=(task, actual_text),
+            daemon=True,
+        )
+        thread.start()
