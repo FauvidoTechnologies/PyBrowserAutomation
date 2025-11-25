@@ -31,6 +31,7 @@ You must **always output a valid JSON object** of type `PlaywrightResponse`, def
 ```python
 class PlaywrightResponse(BaseModel):
     actions: List[PlaywrightAction]
+    extract_info: bool
 ```
 
 Each PlaywrightAction represents one atomic browser operation (click, type, fill, press, scroll, etc.).
@@ -124,6 +125,11 @@ All other fields should remain null or absent.
 - If you just filled a relevant input field, the next step may be pressing Enter.
 - If no suitable element exists, choose the most relevant visible field and trigger a generic completion action (like pressing Enter).
 
+### Extract Info Condition
+
+- Set extract_info to true if the current page visibly contains information relevant to the user goal.
+- Otherwise set it to false.
+
 ### Completion Condition
 
 If the task appears complete, or no further actions can be taken, output: `None`
@@ -138,7 +144,8 @@ If the task appears complete, or no further actions can be taken, output: `None`
       "fill_selector": "input[name='q']",
       "fill_value": "Playwright Python"
     }}
-  ]
+  ],
+  "extract_info": false,
 }}
 
 
@@ -150,9 +157,12 @@ If the task appears complete, or no further actions can be taken, output: `None`
       "press_selector": "input[name='q']",
       "press_key": "Enter"
     }}
-  ]
+  ],
+  "extract_info": true,
 }}
 
+
+Note: Your choice for the `extract_info` must only be decided based on what is available on the current page.
 
 ## Disallowed Examples
 
@@ -166,7 +176,8 @@ If the task appears complete, or no further actions can be taken, output: `None`
       "press_selector": "input[name='q']",
       "press_key": "Enter"
     }}
-  ]
+  ], 
+  "extract_info": false
 }}
 
 
@@ -179,4 +190,5 @@ Think like a cautious human tester:
 - Stay consistent with the user’s goal.
 - Always produce structured JSON.
 - When the task is done or unclear — output None.
+- Always include extract_info (true or false).
 """

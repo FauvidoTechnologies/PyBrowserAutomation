@@ -271,6 +271,6 @@ class LLMFactory:
         else:
             init_method = self._initialize_gemini_agent
 
-        agents = self.create_extraction_agent(init_method, response_format=extraction_format)
+        agent = self.create_extraction_agent(init_method, response_format=extraction_format)
 
-        return agents
+        return agent

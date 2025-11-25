@@ -5,6 +5,7 @@ from typing import Dict, List, Union, Any
 from pydantic import BaseModel
 
 from pyba.core.agent.base_agent import BaseAgent
+from pyba.core.agent.extraction_agent import ExtractionAgent
 from pyba.utils.prompts import general_prompt, output_prompt
 from pyba.utils.structure import PlaywrightResponse
 
@@ -62,20 +63,26 @@ class PlaywrightAgent(BaseAgent):
 
         return prompt
 
-    def _call_model(self, agent: Any, prompt: str, agent_type: str) -> Any:
+    def _call_model(
+        self, agent: Any, prompt: str, agent_type: str, cleaned_dom: Dict = None
+    ) -> Any:
         """
         Generic method to call the correct LLM provider and parse the response.
 
         Args:
-            agent: The agent to use (action_agent or output_agent)
-            prompt: The fully formatted prompt string
-            agent_type: "action" or "output", to determine parsing logic
+            `agent`: The agent to use (action_agent or output_agent)
+            `prompt`: The fully formatted prompt string
+            `agent_type`: "action" or "output", to determine parsing logic
+            `cleaned_dom`: A dictionary that holds the `actual_text` from which the data is to be extracted
 
         Returns:
             The parsed response (SimpleNamespace for action, str for output)
-
-        Uses the attempt_number to give ou
         """
+
+        # If this guy gives me an output which says I need to extract the relevant data from this page,
+        # Then I call the extraction agent here and extract information in a separate thread? Separate thread is easier,
+        # I don't have to write my functions as async then
+
         if self.engine.provider == "openai":
             response = self.handle_openai_execution(
                 agent=agent,
@@ -85,7 +92,13 @@ class PlaywrightAgent(BaseAgent):
 
             # Parse based on agent type
             if agent_type == "action":
-                return SimpleNamespace(**parsed_json.get("actions")[0])
+                actions = SimpleNamespace(**parsed_json.get("actions")[0])
+                extract_info_flag = parsed_json.get("extract_info")
+                if extract_info_flag:
+                    self.extractor.run_threaded_info_extraction(
+                        task=self.user_prompt, actual_text=cleaned_dom["actual_text"]
+                    )
+                return actions
             elif agent_type == "output":
                 return str(parsed_json.get("output"))
 
@@ -103,7 +116,13 @@ class PlaywrightAgent(BaseAgent):
                 # Parse based on agent type
                 if agent_type == "action":
                     if hasattr(parsed_object, "actions") and parsed_object.actions:
-                        return parsed_object.actions[0]
+                        actions = parsed_object.actions[0]
+                        extract_info_flag = parsed_object.extract_info
+                        if extract_info_flag:
+                            self.extractor.run_threaded_info_extraction(
+                                task=self.user_prompt, actual_text=cleaned_dom["actual_text"]
+                            )
+                        return actions
                     raise IndexError("No 'actions' found in VertexAI response.")
                 elif agent_type == "output":
                     if hasattr(parsed_object, "output") and parsed_object.output:
@@ -117,8 +136,14 @@ class PlaywrightAgent(BaseAgent):
 
         else:  # Using gemini
             response = self.handle_gemini_execution(agent=agent, prompt=prompt)
-            action = agent["response_format"].model_validate_json(response.text)
-            return action.actions[0]
+            parsed_object = agent["response_format"].model_validate_json(response.text)
+            actions = parsed_object.actions[0]
+            extract_info_flag = parsed_object.extract_info
+            if extract_info_flag:
+                self.extractor.run_threaded_info_extraction(
+                    task=self.user_prompt, actual_text=cleaned_dom["actual_text"]
+                )
+            return actions
 
     def process_action(
         self,
@@ -156,8 +181,12 @@ class PlaywrightAgent(BaseAgent):
             fail_reason=fail_reason,
         )
 
-        # Now here we need to think
-        return self._call_model(agent=self.action_agent, prompt=prompt, agent_type="action")
+        self.user_prompt = user_prompt
+        self.extractor = ExtractionAgent(engine=self.engine, extraction_format=extraction_format)
+
+        return self._call_model(
+            agent=self.action_agent, prompt=prompt, agent_type="action", cleaned_dom=cleaned_dom
+        )
 
     def get_output(self, cleaned_dom: Dict[str, Union[List, str]], user_prompt: str) -> str:
         """

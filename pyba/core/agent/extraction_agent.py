@@ -1,39 +1,45 @@
-from typing import Dict
-
 from pydantic import BaseModel
 
 from pyba.core.agent.base_agent import BaseAgent
+from pyba.utils.prompts.extraction_prompts import general_prompt
 
 
 class ExtractionAgent(BaseAgent):
     """
-    Defines the Extraction Agent functions. This is a helper module along with the
-    output agent, no more only final answers.
+    This is a helper agent in all aspects. To use this, all other agents
+    need to import and initialise this.
 
-            Intermediate answers as well!
+    This agent allows for threaded infomation extraction to not hinder the main pipeline flow.
 
-        Args:
-        `extraction_format`: The format which should be fitted
-
-
-    The class exposes an async function and won't hinder the main pipeline's flow.
+    Args:
+        `extraction_format`: The format which should be fitted for the extraction
     """
 
-    def __init__(self, extraction_format: BaseModel):
-        super().__init__()  # Initialising the base params from BaseAgent
+    def __init__(self, engine, extraction_format: BaseModel):
+        super().__init__(engine=engine)  # Initialising the base params from BaseAgent
 
         self.extraction_format = extraction_format
         self.agent = self.llm_factory.get_extraction_agent(
             extraction_format=self.extraction_format
         )  # Getting the extraction agent
 
-    async def extract_information(self, page_contents: Dict[str, str]):
+    def _initialise_prompt(self, task: str, actual_text: str):
         """
-        Function to fit the `extraction_format`
+        Takes in the actual_text and wraps it around the general prompt
 
         Args:
-                `page_contents`: The contents of the page the model is currently seeing
-
-        The sync endpoint will be blocking.
+                `task`: The user's defined task
+                `actual_text`: The current text on the page
         """
+        return general_prompt.format(task=task, actual_text=actual_text)
+
+    def run_threaded_info_extraction(self, task: str, actual_text: str):
+        """
+        Threaded function to extract data from the current page
+
+        Args:
+                        `task`: The user's defined task
+            `actual_text`: The current page text
+        """
+
         pass

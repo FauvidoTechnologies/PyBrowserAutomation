@@ -34,6 +34,12 @@ class BaseAgent:
         self.log = get_logger()
         self.mode: Literal["Normal", "DFS", "BFS"] = self.engine.mode
 
+    def _initialise_prompt(self):
+        """
+        Function to initialise prompts. This function needs to be impemented for each agent
+        """
+        pass
+
     def _initialise_openai_arguments(
         self, system_instruction: str, prompt: str, model_name: str
     ) -> Dict[str, List[Dict[str, str]]]:

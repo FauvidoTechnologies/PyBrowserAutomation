@@ -139,6 +139,10 @@ class PlaywrightAction(BaseModel):
 
 class PlaywrightResponse(BaseModel):
     actions: List[PlaywrightAction]
+    extract_info: Optional[bool] = Field(
+        ...,
+        description="A specific boolean value for the playwright agent to decide if extraction is required from this page",
+    )
 
 
 class OutputResponseFormat(BaseModel):

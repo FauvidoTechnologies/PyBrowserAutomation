@@ -346,7 +346,12 @@ class BaseEngine:
         return action
 
     async def retry_perform_action(
-        self, cleaned_dom: Dict, prompt: str, history: str, fail_reason: str
+        self,
+        cleaned_dom: Dict,
+        prompt: str,
+        history: str,
+        fail_reason: str,
+        extraction_format: None,
     ) -> Optional[str]:
         """
         helper function to retry the action after a failure
@@ -356,6 +361,7 @@ class BaseEngine:
             `prompt`: The original prompt given by the user
             `history`: The past action that failed
             `fail_reason`: Reason for the failure for the action
+            `extraction_format`: In case the current page needs extraction as well
 
         This function will retry the action based on the current DOM and the past action. This should
         most likely fix the issue of a stale element or a hallucinated component or something.
@@ -371,6 +377,7 @@ class BaseEngine:
             user_prompt=prompt,
             history=history,
             fail_reason=fail_reason,
+            extraction_format=extraction_format,
         )
 
         output = await self.generate_output(action=action, cleaned_dom=cleaned_dom, prompt=prompt)
