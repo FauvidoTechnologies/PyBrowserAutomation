@@ -1,10 +1,12 @@
-pyba.cli.cli\_core package
+CLI core package
 ==========================
+
+Documentation for the core CLI packages
 
 Submodules
 ----------
 
-pyba.cli.cli\_core.arg\_parser module
+Arg\_Parser
 -------------------------------------
 
 .. automodule:: pyba.cli.cli_core.arg_parser
@@ -12,7 +14,7 @@ pyba.cli.cli\_core.arg\_parser module
    :undoc-members:
    :show-inheritance:
 
-pyba.cli.cli\_core.cli\_main module
+CLI\_main
 -----------------------------------
 
 .. automodule:: pyba.cli.cli_core.cli_main

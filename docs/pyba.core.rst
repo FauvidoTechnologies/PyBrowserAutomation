@@ -1,4 +1,4 @@
-pyba.core package
+Core package
 =================
 
 The **``pyba.core``** package forms the foundation of the PyBA framework.  

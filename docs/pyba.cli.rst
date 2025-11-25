@@ -1,5 +1,7 @@
-pyba.cli package
+pyba CLI package
 ================
+
+The main CLI directory tree for Pyba
 
 Subpackages
 -----------
