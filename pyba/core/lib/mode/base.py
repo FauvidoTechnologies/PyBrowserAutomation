@@ -134,6 +134,8 @@ class BaseEngine:
             `prompt`: The prompt which was given to the model
         """
         if action is None or all(value is None for value in vars(action).values()):
+            # DEBUG:
+            print(action)
             self.log.success("Automation completed, agent has returned None")
             try:
                 output = self.playwright_agent.get_output(

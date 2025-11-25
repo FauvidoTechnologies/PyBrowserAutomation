@@ -69,6 +69,8 @@ You must output a boolean `extract_info`.
 - True if the current page visibly contains **any** information required by the user goal.
 - False otherwise.
 
+NOTE: IF THE USER HAS REQUESTED FOR CERTAIN EXTRACTIONS, DON'T TRY TO DO IT YOURSELF. SET THE `extract_info` BOOLEAN TO TRUE AND PROCEED (OR SET A WAIT TIME IN ACTIONS)
+
 ### 6. **Completion.**
 If no further actions are required and the task is finished, return `None`.
 
@@ -79,40 +81,43 @@ Respond **only** with a valid JSON object of type `PlaywrightResponse`.
 
 Example of a valid action:
 
-{
+{{
   "actions": [
-    {
+    {{
       "fill_selector": "input[name='q']",
       "fill_value": "python"
-    }
+    }}
   ],
-  "extract_info": false
-}
+  "extract_info": true
+}}
 
 Example of an allowed follow-up:
 
-{
+{{
   "actions": [
-    {
+    {{
       "press_selector": "input[name='q']",
       "press_key": "Enter"
-    }
+    }}
   ],
   "extract_info": false
-}
+}}
 
 Invalid example (multiple active fields):
 
-{
+{{
   "actions": [
-    {
+    {{
       "click": "#btn",
       "fill_selector": "#search",
       "fill_value": "hi"
-    }
+    }}
   ],
   "extract_info": false
-}
+}}
 
 Follow these rules exactly. No exceptions.
+
+NOTE: IF THE USER HAS REQUESTED FOR CERTAIN EXTRACTIONS, DON'T TRY TO DO IT YOURSELF. SET THE `extract_info` BOOLEAN TO TRUE AND PROCEED (OR SET A WAIT TIME IN ACTIONS).
+If you have reached a page where extractions need to be performed, set the `extract_info` boolean and wait for a few seconds. Then proceed. Do not directly return None. Wait if extractions are to be performed.
 """

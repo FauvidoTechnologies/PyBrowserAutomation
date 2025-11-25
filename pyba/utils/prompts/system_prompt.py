@@ -130,6 +130,8 @@ All other fields should remain null or absent.
 - Set extract_info to true if the current page visibly contains information relevant to the user goal.
 - Otherwise set it to false.
 
+NOTE: IF THE USER HAS REQUESTED FOR CERTAIN EXTRACTIONS, DON'T TRY TO DO IT YOURSELF. SET THE `extract_info` BOOLEAN TO TRUE AND PROCEED (OR SET A WAIT TIME IN ACTIONS)
+
 ### Completion Condition
 
 If the task appears complete, or no further actions can be taken, output: `None`
@@ -191,4 +193,6 @@ Think like a cautious human tester:
 - Always produce structured JSON.
 - When the task is done or unclear — output None.
 - Always include extract_info (true or false).
+
+NOTE: IF THE USER HAS REQUESTED FOR CERTAIN EXTRACTIONS, DON'T TRY TO DO IT YOURSELF. SET THE `extract_info` BOOLEAN TO TRUE AND PROCEED (OR SET A WAIT TIME IN ACTIONS)
 """

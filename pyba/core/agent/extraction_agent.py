@@ -4,7 +4,7 @@ import threading
 from pydantic import BaseModel
 
 from pyba.core.agent.base_agent import BaseAgent
-from pyba.utils.prompts.extraction_prompts import general_prompt
+from pyba.utils.prompts.extraction_prompts import extraction_general_instruction
 
 
 class ExtractionAgent(BaseAgent):
@@ -34,7 +34,7 @@ class ExtractionAgent(BaseAgent):
                 `task`: The user's defined task
                 `actual_text`: The current text on the page
         """
-        return general_prompt.format(task=task, actual_text=actual_text)
+        return extraction_general_instruction.format(task=task, actual_text=actual_text)
 
     def info_extraction(self, task: str, actual_text: str) -> None:
         """
@@ -62,6 +62,8 @@ class ExtractionAgent(BaseAgent):
                 self.log.error(f"Unable to parse the outoput from OpenAI response: {e}")
                 return None
         elif self.engine.provider == "vertexai":
+            # DEBUG:
+            print("in here")
             response = self.handle_vertexai_execution(agent=self.agent, prompt=prompt)
 
             try:
@@ -95,7 +97,7 @@ class ExtractionAgent(BaseAgent):
         This function creates a separate thread for calling the agent on the current page
         and extracting the relevant information with the right format.
         """
-
+        self.log.info("Running the extractor on the current page")
         thread = threading.Thread(
             target=self.info_extraction,
             args=(task, actual_text),
