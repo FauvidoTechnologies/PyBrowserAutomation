@@ -38,7 +38,7 @@ class BaseAgent:
         """
         Function to initialise prompts. This function needs to be impemented for each agent
         """
-        pass
+        raise NotImplementedError("Subclasses must implement _initialise_prompt")
 
     def _initialise_openai_arguments(
         self, system_instruction: str, prompt: str, model_name: str
