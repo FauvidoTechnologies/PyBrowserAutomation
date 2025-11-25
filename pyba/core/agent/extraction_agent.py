@@ -62,8 +62,6 @@ class ExtractionAgent(BaseAgent):
                 self.log.error(f"Unable to parse the outoput from OpenAI response: {e}")
                 return None
         elif self.engine.provider == "vertexai":
-            # DEBUG:
-            print("in here")
             response = self.handle_vertexai_execution(agent=self.agent, prompt=prompt)
 
             try:

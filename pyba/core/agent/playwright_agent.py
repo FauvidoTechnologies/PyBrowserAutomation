@@ -118,9 +118,6 @@ class PlaywrightAgent(BaseAgent):
                     if hasattr(parsed_object, "actions") and parsed_object.actions:
                         actions = parsed_object.actions[0]
                         extract_info_flag = parsed_object.extract_info
-                        # DEBUG:
-                        print(f"This is the extract_info flag: {extract_info_flag}")
-
                         if extract_info_flag:
                             self.extractor.run_threaded_info_extraction(
                                 task=self.user_prompt, actual_text=cleaned_dom["actual_text"]
