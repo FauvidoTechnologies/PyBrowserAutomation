@@ -7,6 +7,9 @@ It can visit any website, navigate interfaces autonomously, fill forms, perform 
 
 Built on top of Playwright, PyBA focuses on highly exploratory automations rather than precise inputs (though it supports both styles). It is designed for developers, researchers, analysts, and security engineers who want human-level browser reasoning without manually writing automation scripts.
 
+>[!NOTE]
+>pyba is currently at version 0.2.8. This is not stable and I will be updating this a lot. The first major release is scheduled for 18th December 2025.
+
 ---
 
 ## Core Modes
@@ -31,6 +34,11 @@ PyBA provides three execution modes, each optimized for a different style of rea
 ---
 
 ## Key Features
+
+##### Extraction
+
+Extracts the relevant data **during** automation in a separate thread and logs it.
+The format can be specified using pydantic models
 
 ##### Trace zip generation
 
