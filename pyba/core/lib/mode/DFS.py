@@ -4,6 +4,7 @@ from typing import List, Union
 
 from playwright.async_api import async_playwright
 from playwright_stealth import Stealth
+from pydantic import BaseModel
 
 from pyba.core.agent import PlannerAgent
 from pyba.core.lib.action import perform_action
@@ -83,13 +84,19 @@ class DFS(BaseEngine):
         self.max_breadth = max_depth
         self.old_plan = None  # A variable to hold the old plan for the planner agent to understand what has been done already
 
-    async def run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
+    async def run(
+        self,
+        prompt: str,
+        automated_login_sites: List[str] = None,
+        extraction_format: BaseModel = None,
+    ) -> Union[str, None]:
         """
         Run pyba in DFS mode.
 
         Args:
             `prompt`: The task assigned to DFS by the user
             `automated_login_sites`: Login site name for pre-written scripts to run
+            `extraction_format`: A pydantic BaseModel which defines the extraction format for any data extraction
 
         The task is fed into the planner to get a plan which is then passed to the action models
         to fetch an actionable element.
@@ -118,7 +125,10 @@ class DFS(BaseEngine):
                         # Get an actionable element from the playwright agent
                         history = self.fetch_history()
                         action = self.fetch_action(
-                            cleaned_dom=cleaned_dom.to_dict(), user_prompt=plan, history=history
+                            cleaned_dom=cleaned_dom.to_dict(),
+                            user_prompt=plan,
+                            history=history,
+                            extraction_format=extraction_format,
                         )
                         # Check if the automation has finished and if so, get the output
                         output = await self.generate_output(
@@ -162,13 +172,22 @@ class DFS(BaseEngine):
             await self.save_trace()
             await self.shut_down()
 
-    def sync_run(self, prompt: str, automated_login_sites: List[str] = None) -> Union[str, None]:
+    def sync_run(
+        self,
+        prompt: str,
+        automated_login_sites: List[str] = None,
+        extraction_format: BaseModel = None,
+    ) -> Union[str, None]:
         """
         Sync endpoint for running the above function
         """
         try:
             output = asyncio.run(
-                self.run(prompt=prompt, automated_login_sites=automated_login_sites)
+                self.run(
+                    prompt=prompt,
+                    automated_login_sites=automated_login_sites,
+                    extraction_format=extraction_format,
+                )
             )
 
             if output:
