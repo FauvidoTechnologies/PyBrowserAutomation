@@ -3,7 +3,7 @@ import time
 from typing import Optional
 
 from pyba.database.database import Database
-from pyba.database.models import EpisodicMemory
+from pyba.database.models import EpisodicMemory, SemanticMemory
 
 
 class DatabaseFunctions:
@@ -139,4 +139,52 @@ class DatabaseFunctions:
         if not hasattr(self, "session"):
             return False
 
-        pass
+        try:
+            # Access the current memory record if it exists
+            memory_record = (
+                self.session.query(SemanticMemory)
+                .filter(SemanticMemory.session_id == session_id)
+                .one_or_none()
+            )
+
+            if memory_record:
+                try:
+                    logs_list = json.loads(memory_record.logs)
+                except json.JSONDecodeError:
+                    logs_list = []
+
+                logs_list.append(logs)
+
+                memory_record.logs = json.dumps(logs_list)
+
+            else:
+                new_memory = SemanticMemory(
+                    session_id=session_id,
+                    logs=json.dumps([logs]),
+                )
+                self.session.add(new_memory)
+
+            return self.submit_query_with_retry()
+
+        except Exception:
+            self.session.rollback()
+            return False
+        finally:
+            self.session.close()
+
+    def get_semantic_memory_by_session_id(self, session_id: str) -> Optional[SemanticMemory]:
+        """
+        Retrieves all the semantic memory from the database
+
+        Args:
+            `session_id`: The unique session ID to query for.
+        Returns:
+            An EpisodicMemory object if found, else None.
+        """
+        if not hasattr(self, "session"):
+            return None
+        try:
+            memory = self.session.get(SemanticMemory, session_id)
+            return memory
+        except Exception:
+            return None
