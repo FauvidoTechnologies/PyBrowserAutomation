@@ -2,6 +2,8 @@
 
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/py-browser-automation?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/py-browser-automation)
 
+[![Socket Badge](https://badge.socket.dev/pypi/package/py-browser-automation/0.2.8?artifact_id=tar-gz)](https://badge.socket.dev/pypi/package/py-browser-automation/0.2.8?artifact_id=tar-gz)
+
 PyBA (Py Browser Automation) is a no-code, LLM-powered, reproducible browser automation framework written in Python.
 It can visit any website, navigate interfaces autonomously, fill forms, perform OSINT tasks, automate testing, extract data, and execute complex multi-step workflows - all from a single natural-language prompt.
 
