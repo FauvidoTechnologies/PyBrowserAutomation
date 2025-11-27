@@ -351,7 +351,7 @@ class BaseEngine:
         prompt: str,
         history: str,
         fail_reason: str,
-        extraction_format: None,
+        extraction_format: BaseModel = None,
     ) -> Optional[str]:
         """
         helper function to retry the action after a failure
