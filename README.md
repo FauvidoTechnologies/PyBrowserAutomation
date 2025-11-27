@@ -1,13 +1,25 @@
-# PyBA — Python Browser Automation
+<h1 align="center">PyBA — Python Browser Automation</h1>
 
-[![PyPI Downloads](https://static.pepy.tech/personalized-badge/py-browser-automation?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/py-browser-automation)
+<p align="center">
+  <strong>No-code, LLM-powered, reproducible browser automation in Python.</strong><br>
+  Visit any website, navigate autonomously, fill forms, extract data, perform OSINT, automate testing, and run multi-step workflows — all from one natural-language prompt.
+</p>
 
-[![Socket Badge](https://badge.socket.dev/pypi/package/py-browser-automation/0.2.8?artifact_id=tar-gz)](https://badge.socket.dev/pypi/package/py-browser-automation/0.2.8?artifact_id=tar-gz)
+<p align="center">
+  <a href="https://pepy.tech/projects/py-browser-automation">
+    <img height="28px" src="https://static.pepy.tech/personalized-badge/py-browser-automation?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://badge.socket.dev/pypi/package/py-browser-automation/0.2.8?artifact_id=tar-gz">
+    <img height="28px" src="https://badge.socket.dev/pypi/package/py-browser-automation/0.2.8?artifact_id=tar-gz" />
+  </a>
+</p>
 
-PyBA (Py Browser Automation) is a no-code, LLM-powered, reproducible browser automation framework written in Python.
-It can visit any website, navigate interfaces autonomously, fill forms, perform OSINT tasks, automate testing, extract data, and execute complex multi-step workflows - all from a single natural-language prompt.
-
-Built on top of Playwright, PyBA focuses on highly exploratory automations rather than precise inputs (though it supports both styles). It is designed for developers, researchers, analysts, and security engineers who want human-level browser reasoning without manually writing automation scripts.
+<p align="center">
+  <a href="https://pypi.org/project/py-browser-automation/"><b>PyPI</b></a> •
+  <a href="https://openhub.net/p/pyba"><b>CodeHub</b></a> •
+  <a href="https://pyba.readthedocs.io/"><b>Documentation</b></a>
+</p>
 
 >[!NOTE]
 >pyba is currently at version 0.2.8. This is not stable and I will be updating this a lot. The first major release is scheduled for 18th December 2025.
@@ -37,40 +49,42 @@ PyBA provides three execution modes, each optimized for a different style of rea
 
 ## Key Features
 
-##### Extraction
+### Extraction
 
 Extracts the relevant data **during** automation in a separate thread and logs it.
-The format can be specified using pydantic models
+The format can be specified using pydantic models.
 
-##### Trace zip generation
+>The extracted data is stored in a separate table as memory
+
+### Trace zip generation
 
 Automatic creation of Playwright trace files for full reproducibility in traceviewer.
 
-##### Built-in logging & dependency management
+### Built-in logging & dependency management
 
 Every step is logged and optionally stored in a local/server database.
 
-##### Automatic script generation
+### Automatic script generation
 
 Successful runs can be exported as standalone Python Playwright scripts.
 
-##### Local or remote databases
+### Local or remote databases
 
 Persist every action, observation, and browser state for auditing or replaying runs.
 
-##### Stealth mode & anti-fingerprinting presets
+### Stealth mode & anti-fingerprinting presets
 
 Configurable behavior for bypassing common bot-detection heuristics.
 
-##### Quick login to platforms
+### Quick login to platforms
 
 Fast social-media authentication using environment-variable credentials, without ever exposing them to the LLM.
 
-##### Thread-safe
+### Thread-safe
 
 Suitable for parallel multi-task workflows.
 
-###### Specialized extractors for certain platforms
+#### Specialized extractors for certain platforms
 
 (e.g., YouTube metadata, structured outputs, etc.)
 
