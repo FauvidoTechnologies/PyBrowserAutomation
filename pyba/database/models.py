@@ -26,23 +26,22 @@ class EpisodicMemory(Base):
         )
 
 
-class ExtractedData(Base):
+class SemanticMemory(Base):
     """
-    Database for extracted data
+    Memory for holding intermediate data, relevant goals, extracted outputs
 
     Arguments:
             - `session_id`: A unique session ID for the run
-            - `extraction_model`: The pydantic BaseModel strcture for reference
             - `logs`: The actual logs implemented as a growing buffer
+
+    This is a growing memory type for each session, it holds everything of relevance to the task. This memory
+    will be used to summarise the final output type.
     """
 
-    __tablename__ = "ExtractionData"
+    __tablename__ = "SemanticMemory"
 
     session_id = Column(Text, primary_key=True)
-    extraction_model = Column(Text, nullable=False)
     logs = Column(Text, nullable=False)
 
     def __repr__(self):
-        return ("ExtractedData(session_id: {0}, extraction_model: {1}, logs: {2})").format(
-            self.session_id, self.extraction_model, self.logs
-        )
+        return ("ExtractedData(session_id: {0}, logs: {1})").format(self.session_id, self.logs)
