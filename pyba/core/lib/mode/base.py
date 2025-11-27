@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Dict, Optional
+from typing import Dict, Optional, Literal
 
 from playwright.async_api import TimeoutError
 from pydantic import BaseModel
@@ -25,17 +25,20 @@ class BaseEngine:
         The following will be initialised by the BaseEngine:
 
         - `db_funcs`: The database functions to be used for inserting and querying logs
+        - `mode`: The mode of operation (DFS, BFS or Normal)
+        - `provider_instance`: This will detect the provider you're using
+        - `playwright_agent`: The actual playwright brains of the operation
     """
 
     def __init__(
         self,
-        headless=True,
-        enable_tracing=True,
-        trace_save_directory=None,
+        headless: bool = True,
+        enable_tracing: bool = True,
+        trace_save_directory: str = None,
         database=None,
-        use_logger=None,
-        mode=None,
-        handle_dependencies=False,
+        use_logger: bool = None,
+        mode: Literal["DFS", "BFS", "Normal"] = None,
+        handle_dependencies: bool = False,
         openai_api_key: str = None,
         vertexai_project_id: str = None,
         vertexai_server_location: str = None,

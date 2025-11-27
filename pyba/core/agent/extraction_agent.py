@@ -58,10 +58,16 @@ class ExtractionAgent(BaseAgent):
             try:
                 parsed_json = json.loads(response.choices[0].message.content)
                 self.log.info(f"Extracted content: {parsed_json}")
+                if self.engine.db_funcs:
+                    self.engine.db_funcs.push_to_semantic_memory(
+                        self.engine.session_id, logs=json.dumps(parsed_json)
+                    )
+                    self.log.info("Added to semantic memory")
             except Exception as e:
                 self.log.error(f"Unable to parse the outoput from OpenAI response: {e}")
                 return None
         elif self.engine.provider == "vertexai":
+            print("In here")
             response = self.handle_vertexai_execution(agent=self.agent, prompt=prompt)
 
             try:
@@ -74,8 +80,15 @@ class ExtractionAgent(BaseAgent):
                     return None
 
                 self.log.info(f"Extracted content: {parsed_object}")
+                if self.engine.db_funcs:
+                    print("in here")
+                    self.engine.db_funcs.push_to_semantic_memory(
+                        self.engine.session_id, logs=parsed_object.json()
+                    )
+                    self.log.info("Added to semantic memory")
 
             except Exception as e:
+                print(f"hit exception: {e}")
                 if not response:
                     self.log.error(f"Unable to parse the output from VertexAI response: {e}")
                 # If we have a response which cannot be parsed, it MUST be a None value
@@ -83,6 +96,11 @@ class ExtractionAgent(BaseAgent):
             response = self.handle_gemini_execution(agent=self.agent, prompt=prompt)
             parsed_object = self.agent["response_format"].model_validate_json(response.text)
             self.log.info(f"Extracted content: {parsed_object}")
+            if self.engine.db_funcs:
+                self.engine.db_funcs.push_to_semantic_memory(
+                    self.engine.session_id, logs=parsed_object.json()
+                )
+                self.log.info("Added to semantic memory")
 
     def run_threaded_info_extraction(self, task: str, actual_text: str):
         """
