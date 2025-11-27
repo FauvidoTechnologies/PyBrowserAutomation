@@ -2,6 +2,7 @@ import asyncio
 import json
 from typing import Dict, Optional
 
+from playwright.async_api import TimeoutError
 from pydantic import BaseModel
 
 from pyba.core.agent import PlaywrightAgent
@@ -103,9 +104,13 @@ class BaseEngine:
 
             page_html = await self.page.content()
 
-        body_text = await self.page.inner_text("body")
-        elements = await self.page.query_selector_all(self.combined_selector)
-        base_url = self.page.url
+        try:
+            body_text = await self.page.inner_text("body")
+            elements = await self.page.query_selector_all(self.combined_selector)
+            base_url = self.page.url
+        except TimeoutError:
+            self.log.error("The page has not loaded within the defined timeout, going back")
+            return None
 
         # Then we need to extract the new cleaned_dom from the page
         # Passing in known_fields for the input fields that we already know off so that
