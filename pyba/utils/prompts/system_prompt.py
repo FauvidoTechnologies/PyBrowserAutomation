@@ -79,6 +79,11 @@ All other fields should remain null or absent.
 - wait_timeout: Maximum time (in ms) to wait for the selector or event.
 - wait_ms: Wait for a fixed duration (in milliseconds) using time.sleep().
 
+## Clicking on dropdown menus (**you must specify both of these together**)
+
+- dropdown_field_id: A selector for the dropdown field
+- dropdown_field_value: The value that needs to be chosen from the dropdown menu
+
 ### Keyboard & Mouse
 
 - keyboard_press: Key to simulate pressing using page.keyboard.press().

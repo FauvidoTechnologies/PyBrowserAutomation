@@ -180,6 +180,16 @@ class PlaywrightActionPerformer:
             except Exception as e:
                 raise e
 
+    async def handle_dropdown_click(self):
+        """
+        Dispatch function to handle dropdown menus. This function requires both
+        the field_id and the field_value to be spciefied in the single action.
+        """
+        field_id = self.action.dropdown_field_id
+        field_value = self.action.dropdown_field_value
+
+        await self.page.locator(field_id).select_option(label=f"{field_value}")
+
     async def handle_double_click(self):
         """
         Handle's double clicking an element
@@ -348,6 +358,8 @@ class PlaywrightActionPerformer:
             return await self.handle_click()
         if a.dblclick:
             return await self.handle_double_click()
+        if a.dropdown:
+            return await self.handle_dropdown_click()
         if a.hover:
             return await self.handle_hover()
         if a.press_selector or a.press_key:

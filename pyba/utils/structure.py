@@ -37,6 +37,13 @@ class PlaywrightAction(BaseModel):
         None, description="Hover over the specified element using page.hover(selector)."
     )
 
+    # Dropdowns
+    dropdown_field_id: Optional[str] = Field(
+        None, description="Select the ID of the dropdown field"
+    )
+    dropdown_field_value: Optional[str] = Field(
+        None, description="The value to be selected from the dropdown field"
+    )
     # Input
     fill_selector: Optional[str] = Field(
         None, description="Selector of the input element to fill using page.fill()."
