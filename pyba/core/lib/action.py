@@ -190,6 +190,12 @@ class PlaywrightActionPerformer:
 
         await self.page.locator(field_id).select_option(label=f"{field_value}")
 
+    async def handle_right_click(self):
+        """
+        Dispatch function to handle a right click
+        """
+        await self.page.click(self.action.right_click, button="right")
+
     async def handle_double_click(self):
         """
         Handle's double clicking an element
@@ -358,8 +364,10 @@ class PlaywrightActionPerformer:
             return await self.handle_click()
         if a.dblclick:
             return await self.handle_double_click()
-        if a.dropdown:
+        if a.dropdown_field_id:
             return await self.handle_dropdown_click()
+        if a.right_click:
+            return await self.handle_right_click()
         if a.hover:
             return await self.handle_hover()
         if a.press_selector or a.press_key:

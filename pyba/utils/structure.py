@@ -36,6 +36,10 @@ class PlaywrightAction(BaseModel):
     hover: Optional[str] = Field(
         None, description="Hover over the specified element using page.hover(selector)."
     )
+    right_click: Optional[str] = Field(
+        None,
+        description="Right click a specified element using page.click(selector, button='right')",
+    )
 
     # Dropdowns
     dropdown_field_id: Optional[str] = Field(

@@ -55,6 +55,7 @@ All other fields should remain null or absent.
 - click: Click the specified element using page.click(selector).
 - dblclick: Double-click the specified element using page.dblclick(selector).
 - hover: Hover over the specified element using page.hover(selector).
+- right_click: Right click a specified element using page.click(selector, button='right')
 
 ### Input Actions
 
