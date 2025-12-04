@@ -17,6 +17,9 @@ general:    # The general extraction class
         - "button"
         - "submit"
         - "reset"
+        - "radio"
+        - "dropdown"
+        - "checkbox"
       junk_keywords:    # These are the ones which we are going to skip
         - "previous"
         - "next"
@@ -49,8 +52,6 @@ general:    # The general extraction class
         - "hidden"
         - "submit"
         - "button"
-        - "checkbox"
-        - "radio"
         - "file"
 
 youtube:
