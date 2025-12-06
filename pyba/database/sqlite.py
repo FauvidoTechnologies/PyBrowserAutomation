@@ -25,7 +25,10 @@ class SQLiteHandler:
         """
         Method to create the SQLite tables
         """
-        Base.metadata.create_all(self.engine)
+        try:
+            Base.metadata.create_all(self.engine)
+        except Exception as e:
+            print(f"Something went wrong in creating the SQLite tables: {e}")
 
     def setup(self):
         """
