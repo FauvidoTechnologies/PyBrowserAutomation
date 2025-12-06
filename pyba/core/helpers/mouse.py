@@ -24,7 +24,6 @@ class MouseMovements:
             `width`: The viewport width for the session, defaults at 1200
             `height`: The viewport height for the session, defaults at 1024
         """
-        print("calling mouse")
         self.page = page
 
         # Picks a random number between 0 and the viewport values with mode as 500
