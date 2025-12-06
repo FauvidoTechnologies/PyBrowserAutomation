@@ -6,6 +6,7 @@ from playwright.async_api import TimeoutError
 from pydantic import BaseModel
 
 from pyba.core.agent import PlaywrightAgent
+from pyba.core.helpers.mouse import MouseMovements
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration
@@ -87,9 +88,12 @@ class BaseEngine:
         Extracts the relevant fields from the DOM of the current page and returns
         the DOM dataclass.
         """
+        self.mouse = MouseMovements(page=self.page)
+
         try:
-            await self.page.wait_for_load_state(
-                "networkidle", timeout=1000
+            await asyncio.gather(
+                self.page.wait_for_load_state("networkidle", timeout=1000),
+                self.mouse.random_movement(),
             )  # Wait for a second for network calls to stablize
             page_html = await self.page.content()
         except Exception:
@@ -100,7 +104,10 @@ class BaseEngine:
 
             # We might choose to wait for networkidle -> https://github.com/microsoft/playwright/issues/22897
             try:
-                await self.page.wait_for_load_state("networkidle", timeout=2000)
+                await asyncio.gather(
+                    self.page.wait_for_load_state("networkidle", timeout=2000),
+                    self.mouse.random_movement(),
+                )
             except Exception:
                 # If networkidle never happens, then we'll try a direct wait
                 await asyncio.sleep(3)
@@ -271,10 +278,13 @@ class BaseEngine:
         """
 
         self.automated_login_engine_classes = None
-
+        self.mouse = MouseMovements(page=self.page)
         # Update the DOM after a login
         try:
-            await self.page.wait_for_load_state("networkidle", timeout=2000)
+            await asyncio.gather(
+                self.page.wait_for_load_state("networkidle", timeout=2000),
+                self.mouse.random_movement(),
+            )
         except Exception:
             await asyncio.sleep(2)
 

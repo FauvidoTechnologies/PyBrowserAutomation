@@ -1,3 +1,5 @@
+import asyncio
+
 from playwright.async_api import Page
 
 from pyba.core.scripts.login.base import BaseLogin
@@ -13,7 +15,10 @@ class GmailLogin(BaseLogin):
 
     async def _perform_login(self) -> bool:
         try:
-            await self.page.wait_for_selector(self.config["username_selector"])
+            await asyncio.gather(
+                self.page.wait_for_selector(self.config["username_selector"]),
+                self.mouse.random_movement(),
+            )
             await self.page.fill(self.config["username_selector"], self.username)
             await self.page.click(self.config["submit_selector"])
         except Exception:
@@ -21,14 +26,20 @@ class GmailLogin(BaseLogin):
             return False
 
         try:
-            await self.page.wait_for_selector(self.config["password_selector"])
+            await asyncio.gather(
+                self.page.wait_for_selector(self.config["password_selector"]),
+                self.mouse.random_movement(),
+            )
             await self.page.fill(self.config["password_selector"], self.password)
             await self.page.click(self.config["submit_selector"])
         except Exception:
             # Now this is bad
             try:
                 # Alternate fields that gmail might use
-                await self.page.wait_for_selector(self.config["fall_back"]["password_selector"])
+                await asyncio.gather(
+                    self.page.wait_for_selector(self.config["fall_back"]["password_selector"]),
+                    self.mouse.random_movement(),
+                )
                 await self.page.fill(self.config["fall_back"]["password_selector"], self.password)
                 await self.page.click(self.config["submit_selector"])
             except Exception:

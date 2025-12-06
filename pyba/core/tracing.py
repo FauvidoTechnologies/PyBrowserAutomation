@@ -56,6 +56,10 @@ class Tracing:
                 record_har_content=config["tracing"][
                     "record_har_content"
                 ],  # include request/response bodies
+                viewport={
+                    "width": 1920,
+                    "height": 1080,
+                },  # Including a generic viewport, can later move this to config
             )
 
             await context.tracing.start(
@@ -65,6 +69,6 @@ class Tracing:
             )
 
         else:
-            context = await self.browser.new_context()
+            context = await self.browser.new_context(viewport={"width": 1920, "height": 1080})
 
         return context

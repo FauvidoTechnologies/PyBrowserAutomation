@@ -1,3 +1,5 @@
+import asyncio
+
 from dotenv import load_dotenv
 from playwright.async_api import Page
 
@@ -28,14 +30,20 @@ class InstagramLogin(BaseLogin):
 
     async def _perform_login(self) -> bool:
         try:
-            await self.page.wait_for_selector(self.config["username_selector"])
+            await asyncio.gather(
+                self.page.wait_for_selector(self.config["username_selector"]),
+                self.mouse.random_movement(),
+            )
             await self.page.fill(self.config["username_selector"], self.username)
             await self.page.fill(self.config["password_selector"], self.password)
             await self.page.click(self.config["submit_selector"])
         except Exception:
             try:
                 # Alternate fields that instagram uses
-                await self.page.wait_for_selector(self.config["fallback"]["username_selector"])
+                await asyncio.gather(
+                    self.page.wait_for_selector(self.config["fallback"]["username_selector"]),
+                    self.mouse.random_movement(),
+                )
                 await self.page.fill(self.config["fallback"]["username_selector"], self.username)
                 await self.page.fill(self.config["fallback"]["password_selector"], self.password)
                 await self.page.click(self.config["submit_selector"])
@@ -44,8 +52,11 @@ class InstagramLogin(BaseLogin):
 
         # There is a not-now button that we need to click
         try:
-            await self.page.wait_for_selector(
-                self.config["additional_args"]["additional_selector_1"], timeout=30000
+            await asyncio.gather(
+                self.page.wait_for_selector(
+                    self.config["additional_args"]["additional_selector_1"], timeout=30000
+                ),
+                self.mouse.random_movement(),
             )
             await self.page.click(self.config["additional_args"]["additional_selector_1"])
         except Exception:
@@ -53,8 +64,11 @@ class InstagramLogin(BaseLogin):
 
         # Sometimes these things also come up for new updates
         try:
-            await self.page.wait_for_selector(
-                self.config["additional_args"]["additional_selector_2"], timeout=10000
+            await asyncio.gather(
+                self.page.wait_for_selector(
+                    self.config["additional_args"]["additional_selector_2"], timeout=10000
+                ),
+                self.mouse.random_movement(),
             )
             await self.page.mouse.click(x_from_left, y_top_left)
         except Exception:

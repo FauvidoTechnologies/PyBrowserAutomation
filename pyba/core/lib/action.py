@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from playwright._impl._errors import Error
 from playwright.async_api import Page
 
+from pyba.core.helpers.mouse import MouseMovements
 from pyba.logger import get_logger
 from pyba.utils.common import is_absolute_url
 from pyba.utils.structure import PlaywrightAction
@@ -63,6 +64,7 @@ class PlaywrightActionPerformer:
         self.action = action
 
         self.log = get_logger()
+        self.mouse = MouseMovements(page=self.page)
 
     # -----------------
     # Handle nagivation
@@ -73,16 +75,24 @@ class PlaywrightActionPerformer:
         Wait's until the page is loaded
         """
         await self.page.goto(self.action.goto)
-        await self.page.wait_for_load_state("domcontentloaded")
+        await asyncio.gather(
+            self.page.wait_for_load_state("domcontentloaded"), self.mouse.random_movement()
+        )
 
     async def handle_back(self):
-        await self.page.go_back(wait_until="domcontentloaded")
+        await asyncio.gather(
+            self.page.wait_for_load_state("domcontentloaded"), self.mouse.random_movement()
+        )
 
     async def handle_forward(self):
-        await self.page.go_forward(wait_until="domcontentloaded")
+        await asyncio.gather(
+            self.page.wait_for_load_state("domcontentloaded"), self.mouse.random_movement()
+        )
 
     async def handle_reload(self):
-        await self.page.reload(wait_until="domcontentloaded")
+        await asyncio.gather(
+            self.page.wait_for_load_state("domcontentloaded"), self.mouse.random_movement()
+        )
 
     # -------------------
     # Handle interactions
@@ -120,7 +130,9 @@ class PlaywrightActionPerformer:
         if url_match:
             href = url_match.group(0)
             await self.page.goto(href)
-            await self.page.wait_for_load_state("domcontentloaded")
+            await asyncio.gather(
+                self.page.wait_for_load_state("domcontentloaded"), self.mouse.random_movement()
+            )
             return
 
         locator = self.page.locator(click_target)
@@ -163,7 +175,9 @@ class PlaywrightActionPerformer:
                 base_url = "/".join(self.page.url.split("/")[0:3])  # This won't be 0:3 always
                 href = urljoin(base_url, href)
             await self.page.goto(href)
-            await self.page.wait_for_load_state("domcontentloaded")
+            await asyncio.gather(
+                self.page.wait_for_load_state("domcontentloaded"), self.mouse.random_movement()
+            )
             return
         else:
             try:
@@ -271,12 +285,17 @@ class PlaywrightActionPerformer:
     # ------------
     async def handle_wait(self):
         if self.action.wait_selector:
-            await self.page.wait_for_selector(
-                self.action.wait_selector,
-                timeout=self.action.wait_timeout or 1000,
+            await asyncio.gather(
+                self.page.wait_for_selector(
+                    self.action.wait_selector,
+                    timeout=self.action.wait_timeout or 1000,
+                ),
+                self.mouse.random_movement(),
             )
         elif self.action.wait_ms:
-            await asyncio.sleep(self.action.wait_ms / 1000)
+            await asyncio.gather(
+                asyncio.sleep(self.action.wait_ms / 1000), self.mouse.random_movement()
+            )
 
     # ---------------------------
     # Handle Javascript functions
@@ -328,8 +347,11 @@ class PlaywrightActionPerformer:
     async def handle_new_page(self):
         context = self.page.context
         new_page = await context.new_page()
+        mouse = MouseMovements(page=new_page)
         await new_page.goto(self.action.new_page)
-        await new_page.wait_for_load_state("domcontentloaded")
+        await asyncio.gather(
+            new_page.wait_for_load_state("domcontentloaded"), mouse.random_movement()
+        )
         self.page = new_page
 
     async def handle_close_page(self):
@@ -411,4 +433,5 @@ async def perform_action(page: Page, action: PlaywrightAction):
         await performer.perform()
         return True, None  # The fail_reason is None
     except Exception as e:
+        print(e)
         return None, e
