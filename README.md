@@ -22,7 +22,7 @@
 </p>
 
 >[!NOTE]
->pyba is currently at version 0.2.8. This is not stable and I will be updating this a lot. The first major release is scheduled for 18th December 2025.
+>pyba is currently at version 0.2.9. This is not stable and I will be updating this a lot. The first major release is scheduled for 18th December 2025.
 
 ---
 
