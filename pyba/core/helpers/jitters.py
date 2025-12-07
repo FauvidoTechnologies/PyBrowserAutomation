@@ -1,5 +1,6 @@
 import asyncio
 import random
+from typing import List
 
 from oxymouse import OxyMouse
 from playwright.async_api import Page
@@ -62,6 +63,7 @@ class MouseMovements:
         """
         Function to perform perlin movements
         """
+
         await self._run(algorithm="perlin")
 
     async def random_movement(self):
@@ -77,3 +79,21 @@ class MouseMovements:
 
         _ = mapping[random.randint(1, 3)]
         await _()
+
+    class ScrollMovements:
+        """
+        Class to mimic realistic scroll movements
+        """
+
+        def __init__(self, page: Page):
+            self.page = page
+
+        def generate_scroll_values(self) -> List:
+            """
+            Helper function to generate random scroll values
+
+            Returns a list with scroll values in pixels, positive being downscroll
+            and negative being an upscroll. The final sum should be 0.
+            """
+
+            raise NotImplementedError()
