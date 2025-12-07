@@ -6,7 +6,7 @@ from playwright.async_api import TimeoutError
 from pydantic import BaseModel
 
 from pyba.core.agent import PlaywrightAgent
-from pyba.core.helpers.mouse import MouseMovements
+from pyba.core.helpers.jitters import MouseMovements
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration

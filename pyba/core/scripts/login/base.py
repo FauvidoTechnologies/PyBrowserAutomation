@@ -7,7 +7,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from playwright.async_api import Page
 
-from pyba.core.helpers.mouse import MouseMovements
+from pyba.core.helpers.jitters import MouseMovements
 from pyba.utils.common import verify_login_page
 from pyba.utils.exceptions import CredentialsnotSpecified
 from pyba.utils.load_yaml import load_config

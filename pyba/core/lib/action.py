@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 from playwright._impl._errors import Error
 from playwright.async_api import Page
 
-from pyba.core.helpers.mouse import MouseMovements
+from pyba.core.helpers.jitters import MouseMovements
 from pyba.logger import get_logger
 from pyba.utils.common import is_absolute_url
 from pyba.utils.structure import PlaywrightAction
