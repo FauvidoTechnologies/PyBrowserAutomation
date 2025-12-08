@@ -7,7 +7,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from playwright.async_api import Page
 
-from pyba.core.helpers.jitters import MouseMovements
+from pyba.core.helpers.jitters import MouseMovements, ScrollMovements
 from pyba.utils.common import verify_login_page
 from pyba.utils.exceptions import CredentialsnotSpecified
 from pyba.utils.load_yaml import load_config
@@ -37,6 +37,7 @@ class BaseLogin(ABC):
         self.final_2FA_url = self.config["2FA_wait_value"]
 
         self.mouse = MouseMovements(page=self.page)
+        self.scroll_manager = ScrollMovements(page=self.page)
 
     @abstractmethod
     async def _perform_login(self) -> bool:
@@ -61,7 +62,11 @@ class BaseLogin(ABC):
                 break
 
             # Continous polling, not the best way but works for now
-            await asyncio.gather(asyncio.sleep(1), self.mouse.random_movement())
+            await asyncio.gather(
+                asyncio.sleep(1),
+                self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
+            )
 
     async def run(self) -> Optional[bool]:
         """
@@ -86,6 +91,7 @@ class BaseLogin(ABC):
             await asyncio.gather(
                 self.page.wait_for_load_state("networkidle", timeout=10000),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
         except Exception:
             # It's fine, we'll assume that the login worked nicely

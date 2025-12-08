@@ -6,7 +6,7 @@ from playwright.async_api import TimeoutError
 from pydantic import BaseModel
 
 from pyba.core.agent import PlaywrightAgent
-from pyba.core.helpers.jitters import MouseMovements
+from pyba.core.helpers.jitters import MouseMovements, ScrollMovements
 from pyba.core.lib import HandleDependencies
 from pyba.core.lib.action import perform_action
 from pyba.core.lib.code_generation import CodeGeneration
@@ -89,11 +89,13 @@ class BaseEngine:
         the DOM dataclass.
         """
         self.mouse = MouseMovements(page=self.page)
+        self.scroll_manager = ScrollMovements(page=self.page)
 
         try:
             await asyncio.gather(
                 self.page.wait_for_load_state("networkidle", timeout=1000),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )  # Wait for a second for network calls to stablize
             page_html = await self.page.content()
         except Exception:
@@ -107,6 +109,7 @@ class BaseEngine:
                 await asyncio.gather(
                     self.page.wait_for_load_state("networkidle", timeout=2000),
                     self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
                 )
             except Exception:
                 # If networkidle never happens, then we'll try a direct wait
@@ -279,11 +282,13 @@ class BaseEngine:
 
         self.automated_login_engine_classes = None
         self.mouse = MouseMovements(page=self.page)
+        self.scroll_manager = ScrollMovements(page=self.page)
         # Update the DOM after a login
         try:
             await asyncio.gather(
                 self.page.wait_for_load_state("networkidle", timeout=2000),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
         except Exception:
             await asyncio.sleep(2)

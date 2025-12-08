@@ -33,6 +33,7 @@ class InstagramLogin(BaseLogin):
             await asyncio.gather(
                 self.page.wait_for_selector(self.config["username_selector"]),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
             await self.page.fill(self.config["username_selector"], self.username)
             await self.page.fill(self.config["password_selector"], self.password)
@@ -43,6 +44,7 @@ class InstagramLogin(BaseLogin):
                 await asyncio.gather(
                     self.page.wait_for_selector(self.config["fallback"]["username_selector"]),
                     self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
                 )
                 await self.page.fill(self.config["fallback"]["username_selector"], self.username)
                 await self.page.fill(self.config["fallback"]["password_selector"], self.password)
@@ -57,6 +59,7 @@ class InstagramLogin(BaseLogin):
                     self.config["additional_args"]["additional_selector_1"], timeout=30000
                 ),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
             await self.page.click(self.config["additional_args"]["additional_selector_1"])
         except Exception:
@@ -69,6 +72,7 @@ class InstagramLogin(BaseLogin):
                     self.config["additional_args"]["additional_selector_2"], timeout=10000
                 ),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
             await self.page.mouse.click(x_from_left, y_top_left)
         except Exception:

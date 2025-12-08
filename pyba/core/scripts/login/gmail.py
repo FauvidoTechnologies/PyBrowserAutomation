@@ -18,6 +18,7 @@ class GmailLogin(BaseLogin):
             await asyncio.gather(
                 self.page.wait_for_selector(self.config["username_selector"]),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
             await self.page.fill(self.config["username_selector"], self.username)
             await self.page.click(self.config["submit_selector"])
@@ -29,6 +30,7 @@ class GmailLogin(BaseLogin):
             await asyncio.gather(
                 self.page.wait_for_selector(self.config["password_selector"]),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
             await self.page.fill(self.config["password_selector"], self.password)
             await self.page.click(self.config["submit_selector"])
@@ -39,6 +41,7 @@ class GmailLogin(BaseLogin):
                 await asyncio.gather(
                     self.page.wait_for_selector(self.config["fall_back"]["password_selector"]),
                     self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
                 )
                 await self.page.fill(self.config["fall_back"]["password_selector"], self.password)
                 await self.page.click(self.config["submit_selector"])

@@ -18,6 +18,7 @@ class FacebookLogin(BaseLogin):
             await asyncio.gather(
                 self.page.wait_for_selector(self.config["username_selector"]),
                 self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
             )
             await self.page.fill(self.config["username_selector"], self.username)
             await self.page.fill(self.config["password_selector"], self.password)
