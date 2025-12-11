@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 from playwright._impl._errors import Error
 from playwright.async_api import Page
 
+import pyba.core.helpers as global_vars
 from pyba.core.helpers.jitters import MouseMovements, ScrollMovements
 from pyba.logger import get_logger
 from pyba.utils.common import is_absolute_url
@@ -67,6 +68,18 @@ class PlaywrightActionPerformer:
         self.mouse = MouseMovements(page=self.page)
         self.scroll_manager = ScrollMovements(page=self.page)
 
+        self.use_random_flag = global_vars._use_random
+
+    async def wait_till_loaded(self):
+        if self.use_random_flag:
+            await asyncio.gather(
+                self.page.wait_for_load_state("domcontentloaded"),
+                self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
+            )
+        else:
+            (await self.page.wait_for_load_state("domcontentloaded"),)
+
     # -----------------
     # Handle nagivation
     # -----------------
@@ -76,32 +89,37 @@ class PlaywrightActionPerformer:
         Wait's until the page is loaded
         """
         await self.page.goto(self.action.goto)
-        await asyncio.gather(
-            self.page.wait_for_load_state("domcontentloaded"),
-            self.mouse.random_movement(),
-            self.scroll_manager.apply_scroll_jitters(),
-        )
+        await self.wait_till_loaded()
 
     async def handle_back(self):
-        await asyncio.gather(
-            self.page.wait_for_load_state("domcontentloaded"),
-            self.mouse.random_movement(),
-            self.scroll_manager.apply_scroll_jitters(),
-        )
+        if self.use_random_flag:
+            await asyncio.gather(
+                self.page.go_back(wait_until="domcontentloaded"),
+                self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
+            )
+        else:
+            await self.page.go_back(wait_until="domcontentloaded")
 
     async def handle_forward(self):
-        await asyncio.gather(
-            self.page.wait_for_load_state("domcontentloaded"),
-            self.mouse.random_movement(),
-            self.scroll_manager.apply_scroll_jitters(),
-        )
+        if self.use_random_flag:
+            await asyncio.gather(
+                self.page.go_forward(wait_until="domcontentloaded"),
+                self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
+            )
+        else:
+            await self.page.go_forward(wait_until="domcontentloaded")
 
     async def handle_reload(self):
-        await asyncio.gather(
-            self.page.wait_for_load_state("domcontentloaded"),
-            self.mouse.random_movement(),
-            self.scroll_manager.apply_scroll_jitters(),
-        )
+        if self.use_random_flag:
+            await asyncio.gather(
+                self.page.reload(wait_until="domcontentloaded"),
+                self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
+            )
+        else:
+            await self.page.reload(wait_until="domcontentloaded")
 
     # -------------------
     # Handle interactions
@@ -139,11 +157,7 @@ class PlaywrightActionPerformer:
         if url_match:
             href = url_match.group(0)
             await self.page.goto(href)
-            await asyncio.gather(
-                self.page.wait_for_load_state("domcontentloaded"),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            await self.wait_till_loaded()
             return
 
         locator = self.page.locator(click_target)
@@ -186,11 +200,7 @@ class PlaywrightActionPerformer:
                 base_url = "/".join(self.page.url.split("/")[0:3])  # This won't be 0:3 always
                 href = urljoin(base_url, href)
             await self.page.goto(href)
-            await asyncio.gather(
-                self.page.wait_for_load_state("domcontentloaded"),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            await self.wait_till_loaded()
             return
         else:
             try:
@@ -298,20 +308,28 @@ class PlaywrightActionPerformer:
     # ------------
     async def handle_wait(self):
         if self.action.wait_selector:
-            await asyncio.gather(
-                self.page.wait_for_selector(
-                    self.action.wait_selector,
-                    timeout=self.action.wait_timeout or 1000,
-                ),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            if self.use_random_flag:
+                await asyncio.gather(
+                    self.page.wait_for_selector(
+                        self.action.wait_selector,
+                        timeout=self.action.wait_timeout or 1000,
+                    ),
+                    self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
+                )
+            else:
+                await self.page.wait_for_selector(
+                    self.action.wait_selector, timeout=self.action.wait_timeout or 1000
+                )
         elif self.action.wait_ms:
-            await asyncio.gather(
-                asyncio.sleep(self.action.wait_ms / 1000),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            if self.use_random_flag:
+                await asyncio.gather(
+                    asyncio.sleep(self.action.wait_ms / 1000),
+                    self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
+                )
+            else:
+                (await asyncio.sleep(self.action.wait_ms / 1000),)
 
     # ---------------------------
     # Handle Javascript functions

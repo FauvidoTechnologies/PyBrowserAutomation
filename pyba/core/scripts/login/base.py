@@ -7,6 +7,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from playwright.async_api import Page
 
+import pyba.core.helpers as global_vars
 from pyba.core.helpers.jitters import MouseMovements, ScrollMovements
 from pyba.utils.common import verify_login_page
 from pyba.utils.exceptions import CredentialsnotSpecified
@@ -38,6 +39,7 @@ class BaseLogin(ABC):
 
         self.mouse = MouseMovements(page=self.page)
         self.scroll_manager = ScrollMovements(page=self.page)
+        self.use_random_flag = global_vars._use_random
 
     @abstractmethod
     async def _perform_login(self) -> bool:
@@ -62,11 +64,14 @@ class BaseLogin(ABC):
                 break
 
             # Continous polling, not the best way but works for now
-            await asyncio.gather(
-                asyncio.sleep(1),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            if self.use_random_flag:
+                await asyncio.gather(
+                    asyncio.sleep(1),
+                    self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
+                )
+            else:
+                await asyncio.sleep(1)
 
     async def run(self) -> Optional[bool]:
         """
@@ -88,11 +93,14 @@ class BaseLogin(ABC):
         try:
             # await self.page.wait_for_load_state("networkidle", timeout=10000)
             # Replacing a simple wait to do so along with random mouse movements
-            await asyncio.gather(
-                self.page.wait_for_load_state("networkidle", timeout=10000),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            if self.use_random_flag:
+                await asyncio.gather(
+                    self.page.wait_for_load_state("networkidle", timeout=10000),
+                    self.mouse.random_movement(),
+                    self.scroll_manager.apply_scroll_jitters(),
+                )
+            else:
+                (await self.page.wait_for_load_state("networkidle", timeout=10000),)
         except Exception:
             # It's fine, we'll assume that the login worked nicely
             pass

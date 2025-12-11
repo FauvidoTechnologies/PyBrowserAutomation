@@ -5,6 +5,7 @@ from typing import Dict, Optional, Literal
 from playwright.async_api import TimeoutError
 from pydantic import BaseModel
 
+import pyba.core.helpers as global_vars
 from pyba.core.agent import PlaywrightAgent
 from pyba.core.helpers.jitters import MouseMovements, ScrollMovements
 from pyba.core.lib import HandleDependencies
@@ -37,6 +38,7 @@ class BaseEngine:
         enable_tracing: bool = True,
         trace_save_directory: str = None,
         database=None,
+        use_random=None,
         use_logger: bool = None,
         mode: Literal["DFS", "BFS", "Normal"] = None,
         handle_dependencies: bool = False,
@@ -54,6 +56,14 @@ class BaseEngine:
         self.db_funcs = DatabaseFunctions(self.database) if database else None
 
         self.automated_login_engine_classes = []
+
+        self.use_random_flag = (
+            use_random if use_random else False
+        )  # I like to set defaults as None...
+        global_vars._use_random = (
+            self.use_random_flag
+        )  # Update the global use random for other modules
+
         setup_logger(use_logger=use_logger)
         self.log = get_logger()
 
@@ -92,11 +102,7 @@ class BaseEngine:
         self.scroll_manager = ScrollMovements(page=self.page)
 
         try:
-            await asyncio.gather(
-                self.page.wait_for_load_state("networkidle", timeout=1000),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )  # Wait for a second for network calls to stablize
+            await self.wait_till_loaded()
             page_html = await self.page.content()
         except Exception:
             # We might get a "Unable to retrieve content because the page is navigating and changing the content" exception
@@ -106,11 +112,7 @@ class BaseEngine:
 
             # We might choose to wait for networkidle -> https://github.com/microsoft/playwright/issues/22897
             try:
-                await asyncio.gather(
-                    self.page.wait_for_load_state("networkidle", timeout=2000),
-                    self.mouse.random_movement(),
-                    self.scroll_manager.apply_scroll_jitters(),
-                )
+                await self.wait_till_loaded()
             except Exception:
                 # If networkidle never happens, then we'll try a direct wait
                 await asyncio.sleep(3)
@@ -285,11 +287,7 @@ class BaseEngine:
         self.scroll_manager = ScrollMovements(page=self.page)
         # Update the DOM after a login
         try:
-            await asyncio.gather(
-                self.page.wait_for_load_state("networkidle", timeout=2000),
-                self.mouse.random_movement(),
-                self.scroll_manager.apply_scroll_jitters(),
-            )
+            await self.wait_till_loaded()
         except Exception:
             await asyncio.sleep(2)
 
@@ -418,3 +416,17 @@ class BaseEngine:
             )
 
         await perform_action(self.page, action)
+
+    async def wait_till_loaded(self):
+        """
+        Helper function to wait till load state while applying
+        random jitters (if specified by the user)
+        """
+        if self.use_random_flag:
+            await asyncio.gather(
+                self.page.wait_for_load_state("networkidle", timeout=1000),
+                self.mouse.random_movement(),
+                self.scroll_manager.apply_scroll_jitters(),
+            )  # Wait for a second for network calls to stablize
+        else:
+            (await self.page.wait_for_load_state("networkidle", timeout=1000),)

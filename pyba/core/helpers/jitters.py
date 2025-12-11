@@ -147,8 +147,6 @@ class ScrollMovements:
         """
         Performs the scroll jitters using the generated values.
         """
-        import asyncio
-
         scroll_values = self.generate_scroll_values(
             num_steps=num_steps,
             max_delta=max_delta,

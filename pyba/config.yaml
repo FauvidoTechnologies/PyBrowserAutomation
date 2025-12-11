@@ -7,6 +7,7 @@ main_engine_configs:
   handle_dependencies: True   # By default, we try to install all the recommended dependencies
   enable_tracing: True        # By default, we allow for tracing of the activity
   exploratory_mode: False     # Will not be running in exploratory mode by default
+  use_random: False           # Will not use random jitters for human movements by default (slightly faster)
   use_logger: False           # Will not use the logger by default
   trace_save_directory: "."   # Saving the trace in the current directory by detault
   banner_path: "pyba/cli/banner.txt"
