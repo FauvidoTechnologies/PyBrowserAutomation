@@ -87,6 +87,14 @@ class ArgParser(ArgumentParser):
         )
 
         base_parser.add_argument(
+            "-r",
+            action="store_true",
+            default=False,
+            dest="use_random",
+            help="Use random mouse and scroll movements in between timeouts and waits",
+        )
+
+        base_parser.add_argument(
             "--enable-tracing",
             action="store_true",
             default=False,

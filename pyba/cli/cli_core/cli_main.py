@@ -57,6 +57,7 @@ class CLIMain(ArgParser):
             "gemini_api_key": self.arguments.gemini_api_key,
             "headless": self.arguments.headless_mode,
             "handle_dependencies": self.arguments.handle_dependencies,
+            "use_random": self.arguments.use_random,
             "use_logger": self.arguments.use_logger,
             "enable_tracing": self.arguments.enable_tracing,
             "trace_save_directory": self.arguments.trace_save_directory,
