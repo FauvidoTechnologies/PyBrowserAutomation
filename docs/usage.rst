@@ -303,6 +303,31 @@ Generated code example:
    if __name__ == '__main__':
        run_automation()
 
+.. _randomisation:
+
+Random movements
+^^^^^^^^^^^^^^^
+
+You can add random mouse and scroll jitters async to normal waits and timeouts for better stealth and replication of human movements:
+
+.. code-block:: python
+
+   from pyba import Engine
+
+   # If OpenAI
+   agent = Engine(
+      openai_api_key="",
+      use_logger=True,
+      use_random=True,     # Set this paramter to be True
+      enable_tracing=True,
+      trace_save_directory="your-directory",
+      headless=True,
+   )
+   agent.run("Look for the status of the current flight from London to New York (British airlines)")
+
+.. note::
+   This **might** make the entire browser automation slower in the whole by a small margin.
+
 .. _modes:
 
 Modes

@@ -130,6 +130,11 @@ Below are flags defined on the ``base_parser`` (available to both ``normal`` and
   * **Verbose logger**; prints live updates of what the automation is doing.
   * Very useful while debugging or when you want a play-by-play in the terminal.
 
+* ``-r``
+
+  * **Mouse and scroll randomisation**; enabled random mouse and scroll movements during wait times
+  * Can be used for additional stealth
+
 * ``--enable-tracing``
 
   * Enables Playwright tracing (records actions/network) and produces a ``.zip`` trace file compatible with Playwright's Trace Viewer.
@@ -268,6 +273,7 @@ Below is the monolithic command you provided, split into clear steps and explain
       --enable-tracing \
       --trace-save-dir "/tmp/pyba_traces" \
       -v \
+      -r \
       -L instagram \
       -L amazon \
       --generate-code \
@@ -281,6 +287,7 @@ Below is the monolithic command you provided, split into clear steps and explain
 * ``--handle-deps`` — Ensure Playwright browsers/deps are installed before running.
 * ``--enable-tracing`` + ``--trace-save-dir`` — Record a trace zipped to ``/tmp/pyba_traces`` for replaying in Playwright Trace Viewer. It can be used to create a script using the SDK (support for CLI coming soon!)
 * ``-v`` — Print verbose logs to the console.
+* ``-r`` — Adds random mouse and scroll movements for stealth
 * ``-L instagram -L amazon`` — Instruct the login engine to attempt automated login for these sites (credentials must be set in env).
 * ``--generate-coode`` — Generate the automation script in sync playwright
 * ``--code-output-path`` — Save the automation script in the specified location at ``/tmp/script.py``
@@ -359,7 +366,7 @@ Credentials not being read
 
     pyba database -e sqlite -n /tmp/pyba.db \
       -t "search amazon.in for birthday gifts under 5000 INR" \
-      -v --enable-tracing --trace-save-dir /tmp/pyba_traces --handle-deps \
+      -v -r --enable-tracing --trace-save-dir /tmp/pyba_traces --handle-deps \
       --openai-api-key ""
 
 Or using gemini's API key:
@@ -392,3 +399,4 @@ Final notes and suggestions
 * Prefer **environment variables** for secrets — it's safer than passing credentials on the command line, as shown in the last example.
 * When debugging, always re-run with **-v (verbose)** and, if necessary, **--enable-tracing** so you can inspect the Playwright trace with Playwright Trace Viewer.
 * Keep **--handle-deps** handy for fresh environments or containers where browsers are not installed.
+* For additional stealth use the **-r** flag.
